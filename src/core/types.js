@@ -113,7 +113,8 @@ export const createVariable = (name, dataType = DATA_TYPES.STRING, io = IO_TYPES
   dataType,
   io,
   sampleValue: undefined,
-  description: undefined
+  description: undefined,
+  color: null // optional background color for variable row (hex or null)
 });
 
 export const createNode = (type, title, position = createPosition()) => ({

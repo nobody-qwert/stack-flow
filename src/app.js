@@ -608,6 +608,12 @@ class DataFlowApp {
     element.className = 'variable';
     element.dataset.variableId = variable.id;
     
+    // Apply custom background color if set
+    if (variable.color) {
+      element.style.backgroundColor = variable.color;
+      element.classList.add('custom-bg');
+    }
+    
     // Ports: black dots; show both sides when io === 'both'
     const makePort = (side) => {
       const p = document.createElement('div');
@@ -1021,6 +1027,7 @@ class DataFlowApp {
                   <option value="out" ${variable.io === 'out' ? 'selected' : ''}>Output</option>
                   <option value="both" ${variable.io === 'both' ? 'selected' : ''}>Both</option>
                 </select>
+                <button class="var-color-btn" data-variable-id="${variable.id}" title="Change color" style="background: ${variable.color || '#f8f9fa'}; width: 20px; height: 20px; border: 1px solid #ccc; border-radius: 3px; padding: 0; margin: 0 2px;"></button>
                 <button class="delete-var-btn" title="Delete variable">×</button>
               </div>
               ${variable.description ? `<div class="variable-description"><small>${variable.description}</small></div>` : ''}
@@ -1073,6 +1080,15 @@ class DataFlowApp {
         store.updateVariable(node.id, variableId, { io: ioSelect.value });
       });
       
+      // Color button handler
+      const colorBtn = item.querySelector('.var-color-btn');
+      if (colorBtn) {
+        colorBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.showColorPalette(colorBtn, node.id, variableId);
+        });
+      }
+      
       // Delete variable button
       const deleteBtn = item.querySelector('.delete-var-btn');
       deleteBtn.addEventListener('click', () => {
@@ -1095,6 +1111,106 @@ class DataFlowApp {
         }
       });
     }
+  }
+
+  showColorPalette(colorBtn, nodeId, variableId) {
+    // 16 preset colors (light pastels for good text contrast)
+    const colors = [
+      '#fde68a', '#fca5a5', '#f9a8d4', '#c7d2fe',
+      '#a7f3d0', '#99f6e4', '#93c5fd', '#fcd34d',
+      '#fca4b6', '#d8b4fe', '#fbcfe8', '#bfdbfe',
+      '#bbf7d0', '#bae6fd', '#fecaca', '#fdecc8'
+    ];
+    
+    // Remove any existing palette
+    const existingPalette = document.querySelector('.color-palette');
+    if (existingPalette) {
+      existingPalette.remove();
+    }
+    
+    // Create palette popup
+    const palette = document.createElement('div');
+    palette.className = 'color-palette';
+    palette.style.cssText = `
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      width: 120px;
+    `;
+    
+    // Position near the color button with viewport boundary checks
+    const rect = colorBtn.getBoundingClientRect();
+    const paletteWidth = 120;
+    const paletteHeight = 120; // Approximate height for 4x4 grid + padding
+    
+    // Calculate initial position
+    let left = rect.left;
+    let top = rect.bottom + 4;
+    
+    // Check right boundary
+    if (left + paletteWidth > window.innerWidth) {
+      left = rect.right - paletteWidth;
+    }
+    
+    // Check bottom boundary
+    if (top + paletteHeight > window.innerHeight) {
+      top = rect.top - paletteHeight - 4;
+    }
+    
+    // Ensure it doesn't go off the left edge
+    left = Math.max(4, left);
+    
+    // Ensure it doesn't go off the top edge
+    top = Math.max(4, top);
+    
+    palette.style.left = `${left}px`;
+    palette.style.top = `${top}px`;
+    
+    // Add "None" option
+    const noneBtn = document.createElement('button');
+    noneBtn.style.cssText = `
+      width: 24px; height: 24px; border: 1px solid #ccc; border-radius: 3px;
+      background: white; cursor: pointer; font-size: 10px; padding: 0;
+    `;
+    noneBtn.textContent = '×';
+    noneBtn.title = 'No color';
+    noneBtn.addEventListener('click', () => {
+      store.updateVariable(nodeId, variableId, { color: null });
+      palette.remove();
+    });
+    palette.appendChild(noneBtn);
+    
+    // Add color swatches
+    colors.forEach(color => {
+      const swatch = document.createElement('button');
+      swatch.style.cssText = `
+        width: 24px; height: 24px; border: 1px solid #ccc; border-radius: 3px;
+        background: ${color}; cursor: pointer; padding: 0;
+      `;
+      swatch.addEventListener('click', () => {
+        store.updateVariable(nodeId, variableId, { color });
+        palette.remove();
+      });
+      palette.appendChild(swatch);
+    });
+    
+    // Close on outside click
+    const closeHandler = (e) => {
+      if (!palette.contains(e.target) && e.target !== colorBtn) {
+        palette.remove();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 0);
+    
+    document.body.appendChild(palette);
   }
 }
 
