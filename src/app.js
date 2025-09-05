@@ -500,7 +500,16 @@ class DataFlowApp {
     // Header
     const header = document.createElement('div');
     header.className = 'node-header';
-    header.textContent = node.title;
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'node-title-text';
+    titleSpan.textContent = node.title;
+    header.appendChild(titleSpan);
+    // Prevent dragging when interacting with the title text and ensure selection for editing
+    titleSpan.addEventListener('mousedown', (e) => { e.stopPropagation(); });
+    titleSpan.addEventListener('click', (e) => {
+      e.stopPropagation();
+      store.setSelection('node', node.id);
+    });
     element.appendChild(header);
     
     // Body with variables (render in the original insertion order)
@@ -943,6 +952,10 @@ class DataFlowApp {
     };
     
     header.addEventListener('mousedown', (e) => {
+      // If the user begins interaction on the title text, treat it as edit/select, not drag
+      if (e.target.closest('.node-title-text')) {
+        return;
+      }
       handleMouseDown(e);
       // Add listeners only when dragging starts
       document.addEventListener('mousemove', handleMouseMove);
