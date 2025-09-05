@@ -232,7 +232,7 @@ input:focus, textarea:focus, select:focus {
   border-radius: 8px;
   min-width: 200px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  cursor: move;
+  cursor: default; /* header is the drag handle; body shows edit cursor */
   user-select: none;
 }
 
@@ -262,6 +262,7 @@ input:focus, textarea:focus, select:focus {
   border-radius: 6px 6px 0 0;
   font-weight: 600;
   font-size: 13px;
+  cursor: move; /* make it obvious this area drags the node */
 }
 
 .node.api .node-header {
@@ -283,6 +284,8 @@ input:focus, textarea:focus, select:focus {
 
 .node-body {
   padding: 8px;
+  /* Subtle, smaller pencil cursor to suggest editing */
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'><path fill='%236e7781' d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z'/></svg>") 1 15, pointer;
 }
 
 .variable-group {
