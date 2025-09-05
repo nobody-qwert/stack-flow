@@ -390,7 +390,10 @@ class DataFlowApp {
       toX = ((preferRight ? toRect.left : toRect.right) - contentRect.left) / contentScale;
     } else {
       // Fallback to approximate positions
-      const nodeWidth = 200;
+      const fromNodeEl = document.querySelector(`.node[data-node-id="${fromNode.id}"]`);
+      const toNodeEl = document.querySelector(`.node[data-node-id="${toNode.id}"]`);
+      const fromNodeWidth = fromNodeEl ? fromNodeEl.getBoundingClientRect().width : (fromNode.width || 200);
+      const toNodeWidth = toNodeEl ? toNodeEl.getBoundingClientRect().width : (toNode.width || 200);
       const nodeHeaderHeight = 30;
       const variableHeight = 25;
       const variableGroupHeaderHeight = 0;
@@ -401,8 +404,8 @@ class DataFlowApp {
       fromY = fromNode.position.y + nodeHeaderHeight + variableGroupHeaderHeight + (fromVarIndex * variableHeight) + variableHeight / 2;
       toY = toNode.position.y + nodeHeaderHeight + variableGroupHeaderHeight + (toVarIndex * variableHeight) + variableHeight / 2;
       
-      fromX = fromNode.position.x + (fromVariable.io === IO_TYPES.IN ? 0 : nodeWidth);
-      toX = toNode.position.x + (toVariable.io === IO_TYPES.OUT ? nodeWidth : 0);
+      fromX = fromNode.position.x + (fromVariable.io === IO_TYPES.IN ? 0 : fromNodeWidth);
+      toX = toNode.position.x + (toVariable.io === IO_TYPES.OUT ? toNodeWidth : 0);
     }
     
     // Nudge endpoints slightly outside node border so tips are not hidden under box outline
@@ -497,6 +500,10 @@ class DataFlowApp {
     element.style.left = `${node.position.x}px`;
     element.style.top = `${node.position.y}px`;
     element.dataset.nodeId = node.id;
+    // Apply saved width if present
+    if (typeof node.width === 'number') {
+      element.style.width = `${node.width}px`;
+    }
     
     // Header
     const header = document.createElement('div');
@@ -518,7 +525,51 @@ class DataFlowApp {
     body.appendChild(group);
     
     element.appendChild(body);
-    
+
+    // Add resize handle
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'node-resize-handle';
+    element.appendChild(resizeHandle);
+
+    // Horizontal resize logic (snap to grid)
+    (function() {
+      const GRID_SIZE = 20;
+      const snap = (v) => Math.round(v / GRID_SIZE) * GRID_SIZE;
+      let startX = 0;
+      let startW = 0;
+      let resizing = false;
+
+      const onMouseMove = (e) => {
+        if (!resizing) return;
+        const delta = e.clientX - startX;
+        let w = startW + delta;
+        w = Math.max(200, Math.min(1000, w)); // clamp width
+        w = snap(w);
+        element.style.width = `${w}px`;
+      };
+
+      const onMouseUp = () => {
+        if (!resizing) return;
+        resizing = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        const w = parseInt(element.style.width, 10);
+        if (!Number.isNaN(w)) {
+          store.updateNode(node.id, { width: w });
+        }
+      };
+
+      resizeHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // avoid starting node drag/select
+        resizing = true;
+        startX = e.clientX;
+        startW = element.getBoundingClientRect().width;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+    })();
+
     // Make draggable
     this.makeNodeDraggable(element, node);
     
