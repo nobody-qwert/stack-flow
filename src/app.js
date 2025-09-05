@@ -5,11 +5,11 @@
 import { store } from './core/store.js';
 import { eventBus, EVENTS } from './core/eventBus.js';
 import { commandStack, setupKeyboardShortcuts } from './core/commandStack.js';
-import { NODE_TYPES, IO_TYPES, createNode, createVariable } from './core/types.js';
+import { NODE_TYPES, IO_TYPES, createNode, createVariable, createDiagram } from './core/types.js';
 import { generateNodeId, generateVariableId, generateEdgeId } from './core/id.js';
 import { importApiFromJson, showApiImportDialog } from './services/importApi.js';
 import { importTableFromJson, showPgImportDialog, createSampleTableDescriptor } from './services/importPg.js';
-import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo } from './services/persistence.js';
+import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
 
 class DataFlowApp {
   constructor() {
@@ -196,25 +196,8 @@ class DataFlowApp {
       uploadDiagram();
     });
     
-    // Palette buttons (same as top bar for now)
-    document.getElementById('plNewApi').addEventListener('click', () => {
-      this.createNode(NODE_TYPES.API);
-    });
-    
-    document.getElementById('plNewTable').addEventListener('click', () => {
-      this.createNode(NODE_TYPES.TABLE);
-    });
-    
-    document.getElementById('plNewGui').addEventListener('click', () => {
-      this.createNode(NODE_TYPES.GUI);
-    });
-    
-    document.getElementById('plImportApi').addEventListener('click', () => {
-      this.importApi();
-    });
-    
-    document.getElementById('plImportPg').addEventListener('click', () => {
-      this.importPg();
+    document.getElementById('btnNewDiagram').addEventListener('click', () => {
+      this.newDiagram();
     });
   }
 
@@ -281,7 +264,18 @@ class DataFlowApp {
       alert('Failed to import table: ' + error.message);
     }
   }
-
+ 
+  newDiagram() {
+    const state = store.getState();
+    const hasContent = state.diagram.nodes.length > 0 || state.diagram.edges.length > 0;
+    if (hasContent) {
+      const proceed = confirm('Start a new diagram? If you want to keep your work, click Cancel and use Export first.');
+      if (!proceed) return;
+    }
+    try { clearSavedDiagram(); } catch (e) {}
+    store.loadDiagram(createDiagram());
+  }
+ 
   getNewNodePosition() {
     const state = store.getState();
     const existingNodes = state.diagram.nodes;
@@ -905,7 +899,10 @@ class DataFlowApp {
       
       <div class="form-group">
         <label>Type:</label>
-        <div>${node.type.toUpperCase()}</div>
+        <div class="type-row">
+          <div class="type-label">${node.type.toUpperCase()}</div>
+          <button id="deleteNode" class="danger-light" title="Delete this node">Delete</button>
+        </div>
       </div>
       
       <div class="form-group">
@@ -939,6 +936,7 @@ class DataFlowApp {
           <button id="addVariable">Add Variable</button>
         </div>
       </div>
+
     `;
   }
 
@@ -988,6 +986,20 @@ class DataFlowApp {
         }
       });
     });
+
+    // Delete node button
+    const deleteNodeBtn = document.getElementById('deleteNode');
+    if (deleteNodeBtn) {
+      deleteNodeBtn.addEventListener('click', () => {
+        if (confirm('Delete this node and its connections?')) {
+          store.deleteNode(node.id);
+          const inspectorBody = document.getElementById('inspectorBody');
+          if (inspectorBody) {
+            inspectorBody.innerHTML = '<p>Select a node, variable, or edge to edit details.</p>';
+          }
+        }
+      });
+    }
   }
 }
 

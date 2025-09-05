@@ -21,29 +21,13 @@
           <button id="btnImportApi" title="Import API example JSON">Import API JSON</button>
           <button id="btnImportPg" title="Import Postgres JSON">Import PG JSON</button>
           <span class="sep"></span>
+          <button id="btnNewDiagram" title="Start a new blank diagram">New</button>
           <button id="btnExport" title="Export diagram to JSON">Export</button>
           <button id="btnImport" title="Import diagram JSON">Import</button>
         </div>
       </header>
 
       <div class="main">
-        <aside class="sidebar" id="palette">
-          <h3>Palette</h3>
-          <div class="palette-group">
-            <button id="plNewApi">New API</button>
-            <button id="plNewTable">New Table</button>
-            <button id="plNewGui">New GUI</button>
-          </div>
-          <h3>Importers</h3>
-          <div class="palette-group">
-            <button id="plImportApi">API JSON</button>
-            <button id="plImportPg">PG JSON</button>
-          </div>
-          <p class="hint">
-            Drag nodes on canvas. Create connections by dragging from an output port (right) to an input port (left).
-            Select an edge to reattach endpoints or delete with Del.
-          </p>
-        </aside>
 
         <div class="canvas-wrap">
           <div id="canvas" class="canvas">

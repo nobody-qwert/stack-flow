@@ -34,6 +34,41 @@ button:active {
   background: #e0e0e0;
 }
 
+button.danger {
+  background: #dc3545;
+  color: #fff;
+  border-color: #dc3545;
+}
+
+button.danger:hover {
+  background: #c82333;
+  border-color: #c82333;
+}
+
+/* Light danger button (subtle delete) */
+button.danger-light {
+  background: #f8d7da;     /* light red */
+  color: #721c24;          /* dark red text */
+  border-color: #f5c6cb;   /* soft red border */
+}
+
+button.danger-light:hover {
+  background: #f1b0b7;     /* a bit stronger on hover */
+  border-color: #f1b0b7;
+}
+
+/* Layout for the Type row housing the delete button */
+.type-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.type-row .type-label {
+  font-weight: 600;
+}
+
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
