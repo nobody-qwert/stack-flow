@@ -657,6 +657,7 @@ class DataFlowApp {
   makePortConnectable(portElement, variable) {
     let isConnecting = false;
     let connectionLine = null;
+    let hotPortEl = null; // preview target port while connecting
     
     const handleMouseDown = (e) => {
       e.preventDefault();
@@ -665,13 +666,13 @@ class DataFlowApp {
       isConnecting = true;
       this.isConnecting = true;
       
-      // Create temporary connection line
-      const svg = document.getElementById('edges');
+      // Create temporary connection line (overlay, red dashed, above nodes)
+      const svg = document.getElementById('edgesOverlay') || document.getElementById('edges');
       connectionLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       connectionLine.setAttribute('class', 'temp-connection');
-      connectionLine.setAttribute('stroke', '#007acc');
+      connectionLine.setAttribute('stroke', '#dc3545');
       connectionLine.setAttribute('stroke-width', '2');
-      connectionLine.setAttribute('stroke-dasharray', '5,5');
+      connectionLine.setAttribute('stroke-dasharray', '6,6');
       
       // Get the variable row edge position relative to the content container
       const content = document.getElementById('content');
@@ -701,6 +702,8 @@ class DataFlowApp {
       connectionLine.setAttribute('y2', startY);
       
       svg.appendChild(connectionLine);
+      // Visual: origin port filled while mouse is held down
+      portElement.classList.add('port-active');
       
       // Store connection state
       const fromSide = portElement.dataset.portSide || (useLeft ? 'in' : 'out');
@@ -750,6 +753,32 @@ class DataFlowApp {
       
       connectionLine.setAttribute('x2', currentX);
       connectionLine.setAttribute('y2', currentY);
+
+      // Highlight a valid target port under cursor while dragging
+      const hovered = document.elementFromPoint(e.clientX, e.clientY)?.closest('.variable-port');
+      const fromSide = this.connectionState?.fromSide;
+      const originNodeEl = portElement.closest('.node');
+
+      const isValidTarget = (el) => {
+        if (!el) return false;
+        const side = el.dataset.portSide || (el.classList.contains('in') ? 'in' : (el.classList.contains('out') ? 'out' : ''));
+        if (!side || !fromSide || side === fromSide) return false;
+        const nodeEl = el.closest('.node');
+        if (!nodeEl || nodeEl === originNodeEl) return false;
+        return true;
+      };
+
+      // Update hot target highlight
+      if (hotPortEl && hotPortEl !== hovered) {
+        hotPortEl.classList.remove('port-hot');
+        hotPortEl = null;
+      }
+      if (isValidTarget(hovered)) {
+        if (hotPortEl !== hovered) {
+          hotPortEl = hovered;
+          hotPortEl.classList.add('port-hot');
+        }
+      }
     };
     
     const handleMouseUp = (e) => {
@@ -766,6 +795,13 @@ class DataFlowApp {
       if (connectionLine) {
         connectionLine.remove();
         connectionLine = null;
+      }
+
+      // Clear port fill feedback (origin + hot target)
+      portElement.classList.remove('port-active');
+      if (hotPortEl) {
+        hotPortEl.classList.remove('port-hot');
+        hotPortEl = null;
       }
       
       // Check if we dropped on another port
