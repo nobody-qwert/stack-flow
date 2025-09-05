@@ -1,0 +1,680 @@
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #333;
+  background: #f5f5f5;
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+button:active {
+  background: #e0e0e0;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+/* Layout */
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 50px;
+  background: #2d2d30;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.brand {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actions button {
+  background: #0e639c;
+  color: white;
+  border: 1px solid #1177bb;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.actions button:hover {
+  background: #1177bb;
+}
+
+.sep {
+  width: 1px;
+  height: 20px;
+  background: #555;
+  margin: 0 4px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: #f8f8f8;
+  border-right: 1px solid #e0e0e0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.sidebar h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #666;
+}
+
+.palette-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.palette-group button {
+  text-align: left;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.palette-group button:hover {
+  background: #f0f0f0;
+  border-color: #007acc;
+}
+
+.hint {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.3;
+  margin-top: 16px;
+}
+
+/* Canvas */
+.canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: grab;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+.content {
+  position: relative;
+  width: 4000px;
+  height: 3000px;
+  background-image: 
+    radial-gradient(circle, #ddd 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0;
+}
+
+.edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.nodes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+/* Node styles */
+.node {
+  position: absolute;
+  background: #fff;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  min-width: 200px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: move;
+  user-select: none;
+}
+
+.node.selected {
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3);
+}
+
+.node.api {
+  border-color: #28a745;
+}
+
+.node.table {
+  border-color: #dc3545;
+}
+
+.node.gui {
+  border-color: #ffc107;
+}
+
+.node-header {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.node.api .node-header {
+  background: #d4edda;
+  color: #155724;
+}
+
+.node.table .node-header {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.node.gui .node-header {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.node-body {
+  padding: 8px;
+}
+
+.variable-group {
+  margin-bottom: 12px;
+}
+
+.variable-group:last-child {
+  margin-bottom: 0;
+}
+
+.variable-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+.variable {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  margin: 2px 0;
+  border-radius: 3px;
+  font-size: 12px;
+  position: relative;
+}
+
+.variable:hover {
+  background: #f8f9fa;
+}
+
+.variable.selected {
+  background: #e3f2fd;
+}
+
+.variable-port {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #666;
+  position: absolute;
+  cursor: crosshair;
+}
+
+.variable-port.input {
+  left: -4px;
+  background: #007acc;
+}
+
+.variable-port.output {
+  right: -4px;
+  background: #28a745;
+}
+
+.variable-port.both {
+  background: #ffc107;
+}
+
+.variable-name {
+  flex: 1;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.variable-type {
+  background: #e9ecef;
+  color: #495057;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+.variable-sample {
+  margin-left: 4px;
+  opacity: 0.7;
+  font-style: italic;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.variable-toggle {
+  margin-left: 4px;
+  background: none;
+  border: none;
+  padding: 2px;
+  font-size: 10px;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.variable-toggle:hover {
+  opacity: 1;
+}
+
+/* Inspector */
+.inspector {
+  width: 336px;
+  background: #f8f8f8;
+  border-left: 1px solid #e0e0e0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.inspector h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #666;
+}
+
+#inspectorBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0; /* allow child to scroll when needed */
+  overflow: auto; /* single scrollbar for the panel content */
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #555;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.variables-list {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
+  /* Expand naturally; avoid nested scrollbars */
+  max-height: none;
+  overflow: visible;
+}
+
+.variable-item {
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+}
+
+.variable-item:last-child {
+  border-bottom: none;
+}
+
+.variable-item.selected {
+  background: #e3f2fd;
+}
+
+.variable-controls {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.variable-controls button {
+  flex: 1;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+/* Variable editing styles */
+.variable-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.var-name-input {
+  flex: 2;
+  font-size: 11px;
+  padding: 2px 4px;
+  min-width: 80px;
+}
+
+.var-type-select,
+.var-io-select {
+  flex: 1;
+  font-size: 10px;
+  padding: 2px 4px;
+  min-width: 60px;
+}
+
+.delete-var-btn {
+  background: #dc3545;
+  color: white;
+  border: 1px solid #dc3545;
+  border-radius: 3px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-var-btn:hover {
+  background: #c82333;
+  border-color: #c82333;
+}
+
+.variable-description {
+  margin-top: 2px;
+  padding-left: 4px;
+  color: #666;
+}
+
+/* Edge styles */
+.edge {
+  stroke: #666;
+  stroke-width: 2;
+  fill: none;
+  cursor: pointer;
+}
+
+.edge.selected {
+  stroke: #007acc;
+  stroke-width: 3;
+}
+
+.edge.ok {
+  stroke: #28a745;
+}
+
+.edge.warn {
+  stroke: #ffc107;
+}
+
+.edge.error {
+  stroke: #dc3545;
+}
+
+.edge-handle {
+  fill: #666;
+  stroke: #fff;
+  stroke-width: 2;
+  cursor: move;
+}
+
+.edge-handle.selected {
+  fill: #007acc;
+}
+
+.edge-arrow {
+  fill: currentColor;
+}
+
+/* Dialog styles */
+.import-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.dialog-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.dialog-content {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.dialog-content h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dialog-content .form-group {
+  margin-bottom: 16px;
+}
+
+.dialog-content .form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.dialog-content .form-group input[type="radio"] {
+  margin-right: 8px;
+}
+
+.dialog-content .form-group label:has(input[type="radio"]) {
+  display: inline-block;
+  margin-right: 16px;
+  margin-bottom: 8px;
+  font-weight: normal;
+}
+
+.dialog-content .form-group label:has(input[type="checkbox"]) {
+  display: inline-block;
+  font-weight: normal;
+}
+
+.dialog-content .form-group input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.dialog-content textarea {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.dialog-actions button {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.dialog-actions button.primary {
+  background: #007acc;
+  color: white;
+  border-color: #007acc;
+}
+
+.dialog-actions button.primary:hover {
+  background: #005a9e;
+  border-color: #005a9e;
+}
+
+/* Utility classes */
+.hidden {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Responsive adjustments */
+@media (max_width: 1200px) {
+  .sidebar {
+    width: 200px;
+  }
+  
+  .inspector {
+    width: 288px;
+  }
+}
+
+@media (max-width: 900px) {
+  .sidebar,
+  .inspector {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  }
+  
+  .sidebar {
+    left: -240px;
+    transition: left 0.3s;
+  }
+  
+  .inspector {
+    right: -336px;
+    transition: right 0.3s;
+  }
+  
+  .sidebar.open {
+    left: 0;
+  }
+  
+  .inspector.open {
+    right: 0;
+  }
+}

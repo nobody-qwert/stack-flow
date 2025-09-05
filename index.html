@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Data Flow Designer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">Data Flow Designer</div>
+        <div class="actions">
+          <button id="btnNewApi" title="Add API endpoint">+ API</button>
+          <button id="btnNewTable" title="Add Postgres table">+ Table</button>
+          <button id="btnNewGui" title="Add GUI view">+ GUI</button>
+          <span class="sep"></span>
+          <button id="btnImportApi" title="Import API example JSON">Import API JSON</button>
+          <button id="btnImportPg" title="Import Postgres JSON">Import PG JSON</button>
+          <span class="sep"></span>
+          <button id="btnExport" title="Export diagram to JSON">Export</button>
+          <button id="btnImport" title="Import diagram JSON">Import</button>
+        </div>
+      </header>
+
+      <div class="main">
+        <aside class="sidebar" id="palette">
+          <h3>Palette</h3>
+          <div class="palette-group">
+            <button id="plNewApi">New API</button>
+            <button id="plNewTable">New Table</button>
+            <button id="plNewGui">New GUI</button>
+          </div>
+          <h3>Importers</h3>
+          <div class="palette-group">
+            <button id="plImportApi">API JSON</button>
+            <button id="plImportPg">PG JSON</button>
+          </div>
+          <p class="hint">
+            Drag nodes on canvas. Create connections by dragging from an output port (right) to an input port (left).
+            Select an edge to reattach endpoints or delete with Del.
+          </p>
+        </aside>
+
+        <div class="canvas-wrap">
+          <div id="canvas" class="canvas">
+            <!-- Content is transformed by pan/zoom -->
+            <div id="content" class="content" data-width="4000" data-height="3000">
+              <!-- SVG edges underneath nodes -->
+              <svg id="edges" class="edges" width="4000" height="3000" viewBox="0 0 4000 3000" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+              <div id="nodes" class="nodes" role="region" aria-label="Nodes"></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="inspector" id="inspector">
+          <h3>Inspector</h3>
+          <div id="inspectorBody">
+            <p>Select a node, variable, or edge to edit details.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="application/json" style="display:none" />
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
