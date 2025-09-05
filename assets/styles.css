@@ -283,7 +283,8 @@ input:focus, textarea:focus, select:focus {
 }
 
 .node-body {
-  padding: 8px;
+  /* Extra right padding so ports don't overlap the resize handle area */
+  padding: 8px 12px 8px 8px;
   /* Subtle, smaller pencil cursor to suggest editing */
   cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'><path fill='%236e7781' d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z'/></svg>") 1 15, pointer;
 }
@@ -347,28 +348,26 @@ input:focus, textarea:focus, select:focus {
 }
 
 .variable-port {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #111; /* black dots */
+  width: 12px;   /* 12x12 hollow square */
+  height: 12px;
+  border-radius: 2px;            /* subtle rounding; set to 0 for sharp square */
+  background: transparent;       /* hollow */
+  border: 2px solid #dc3545;     /* red ring for better affordance */
   position: absolute;
   cursor: crosshair;
   opacity: 0;
-  transition: opacity 0.12s ease-in-out;
+  transition: opacity 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
 }
 
 .variable-port.input {
-  left: -4px;
-  background: #111; /* unify to black */
+  left: -6px; /* center 12px square on edge */
 }
 
 .variable-port.output {
-  right: -4px;
-  background: #111; /* unify to black */
+  right: -6px; /* center 12px square on edge */
 }
 
 .variable-port.both {
-  background: #111; /* unify to black */
 }
 
 .variable-name {
@@ -414,16 +413,15 @@ input:focus, textarea:focus, select:focus {
 .variable:hover .variable-port,
 .connecting .variable-port {
   opacity: 1;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15); /* subtle halo on reveal */
 }
 
 /* IO alias classes (match app.js 'in'/'out' values) */
 .variable-port.in {
-  left: -4px;
-  background: #111; /* black */
+  left: -6px; /* center larger 12px ring on edge */
 }
 .variable-port.out {
-  right: -4px;
-  background: #111; /* black */
+  right: -6px; /* center larger 12px ring on edge */
 }
 
 /* Connection guidance */

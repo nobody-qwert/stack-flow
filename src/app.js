@@ -383,11 +383,17 @@ class DataFlowApp {
         ? (fromRect.left <= toRect.left)
         : (fromNodeEl.getBoundingClientRect().left <= toNodeEl.getBoundingClientRect().left);
       
+      // Keep Y at the variable row center
       fromY = (fromRect.top + fromRect.height / 2 - contentRect.top) / contentScale;
       toY = (toRect.top + toRect.height / 2 - contentRect.top) / contentScale;
-      
-      fromX = ((preferRight ? fromRect.right : fromRect.left) - contentRect.left) / contentScale;
-      toX = ((preferRight ? toRect.left : toRect.right) - contentRect.left) / contentScale;
+
+      // Anchor X to node outer edges with a small pad so tips are fully outside the border
+      const fromNodeRect = fromNodeEl ? fromNodeEl.getBoundingClientRect() : fromRect;
+      const toNodeRect = toNodeEl ? toNodeEl.getBoundingClientRect() : toRect;
+      const edgePad = 0;
+
+      fromX = ((preferRight ? fromNodeRect.right + edgePad : fromNodeRect.left - edgePad) - contentRect.left) / contentScale;
+      toX = ((preferRight ? toNodeRect.left - edgePad : toNodeRect.right + edgePad) - contentRect.left) / contentScale;
     } else {
       // Fallback to approximate positions
       const fromNodeEl = document.querySelector(`.node[data-node-id="${fromNode.id}"]`);
@@ -408,21 +414,7 @@ class DataFlowApp {
       toX = toNode.position.x + (toVariable.io === IO_TYPES.OUT ? toNodeWidth : 0);
     }
     
-    // Nudge endpoints slightly outside node border so tips are not hidden under box outline
-    {
-      const borderOffset = 3 / contentScale;
-      if (typeof fromX === 'number' && typeof toX === 'number') {
-        if (fromX <= toX) {
-          // left-to-right: from at right edge, to at left edge
-          fromX += borderOffset;
-          toX -= borderOffset;
-        } else {
-          // right-to-left
-          fromX -= borderOffset;
-          toX += borderOffset;
-        }
-      }
-    }
+    // Endpoints already placed outside node border by edgePad; no extra nudge needed.
     
     // Create a group to hold both the visual path and the hit area
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -694,10 +686,13 @@ class DataFlowApp {
       const varRow = portElement.closest('.variable');
       const varRect = varRow ? varRow.getBoundingClientRect() : portRect;
       
-      // Anchor to the row's left/right edge center depending on the port position
+      // Determine port side and anchor to node outer edge with small pad so line is visible
       const useLeft = (portRect.left - varRect.left) < (varRect.width / 2);
-      const borderOffset = 3 / contentScale; // keep edge tip just outside node border
-      const startX = (((useLeft ? varRect.left : varRect.right) - contentRect.left) / contentScale) + (useLeft ? -borderOffset : borderOffset);
+      const nodeEl = portElement.closest('.node');
+      const nodeRect = nodeEl ? nodeEl.getBoundingClientRect() : varRect;
+      const edgePad = 0;
+      
+      const startX = (((useLeft ? nodeRect.left : nodeRect.right) - contentRect.left) / contentScale) + (useLeft ? -edgePad : edgePad);
       const startY = ((varRect.top + varRect.height / 2) - contentRect.top) / contentScale;
       
       connectionLine.setAttribute('x1', startX);
