@@ -31,6 +31,7 @@
  * @typedef {Object} EdgeEndpoint
  * @property {string} nodeId - Node ID
  * @property {string} portId - Variable/port ID
+ * @property {'in'|'out'} [side] - Exact port side selected by the user
  */
 
 /**

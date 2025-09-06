@@ -168,7 +168,13 @@ export class ConnectionManager {
 
         // Allow connections between any ports as long as nodes differ
         if (targetNodeId && targetVariableId && targetNodeId !== currentNodeId) {
-          this.createConnection(this.connectionState.fromVariable, variable, targetNodeId, targetVariableId);
+          this.createConnection(
+            this.connectionState.fromVariable,
+            targetNodeId,
+            targetVariableId,
+            this.connectionState.fromSide,
+            targetPort.dataset.portSide
+          );
         }
       }
       
@@ -188,20 +194,20 @@ export class ConnectionManager {
     });
   }
 
-  createConnection(fromVariable, fromVariableObj, toNodeId, toVariableId) {
+  createConnection(fromVariable, toNodeId, toVariableId, fromSide, toSide) {
     // Find the from node
     const state = store.getState();
-    const fromNode = state.diagram.nodes.find(node => 
+    const fromNode = state.diagram.nodes.find(node =>
       node.variables.some(v => v.id === fromVariable.id)
     );
     
     if (!fromNode) return;
     
-    // Create edge
+    // Create edge with exact selected port sides
     const edge = {
       id: generateEdgeId(),
-      from: { nodeId: fromNode.id, portId: fromVariable.id },
-      to: { nodeId: toNodeId, portId: toVariableId },
+      from: { nodeId: fromNode.id, portId: fromVariable.id, side: fromSide },
+      to: { nodeId: toNodeId, portId: toVariableId, side: toSide },
       status: 'ok'
     };
     

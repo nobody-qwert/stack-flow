@@ -36,7 +36,7 @@ export class EdgeRenderer {
     if (!fromVariable || !toVariable) return null;
     
     // Compute anchors using actual DOM variable rows when available
-    const { fromX, fromY, toX, toY } = this.calculateEdgePositions(fromVariable, toVariable, fromNode, toNode);
+const { fromX, fromY, toX, toY } = this.calculateEdgePositions(edge, fromVariable, toVariable, fromNode, toNode);
     
     // Create a group to hold both the visual path and the hit area
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -44,7 +44,7 @@ export class EdgeRenderer {
     g.dataset.edgeId = edge.id;
     
     // Generate the path data using the improved routing algorithm
-    const pathData = this.generateEdgePath(fromX, fromY, toX, toY, fromVariable, toVariable);
+const pathData = this.generateEdgePath(fromX, fromY, toX, toY, edge, fromVariable, toVariable);
     
     // Create invisible hit area path (wider stroke for easier clicking)
     const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -86,7 +86,7 @@ export class EdgeRenderer {
     return g;
   }
 
-  calculateEdgePositions(fromVariable, toVariable, fromNode, toNode) {
+calculateEdgePositions(edge, fromVariable, toVariable, fromNode, toNode) {
     const content = document.getElementById('content');
     const contentRect = content.getBoundingClientRect();
     const transform = getComputedStyle(content).transform;
@@ -122,8 +122,10 @@ export class EdgeRenderer {
         toY = (toRect.top + toRect.height / 2 - contentRect.top) / contentScale;
 
         // Find the actual port elements to determine exact connection points
-        const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.out`);
-        const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.in`);
+        const fromSelectorSide = edge?.from?.side || 'out';
+        const toSelectorSide = edge?.to?.side || 'in';
+        const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.${fromSelectorSide}`);
+        const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.${toSelectorSide}`);
         
         if (fromPortEl && toPortEl) {
           // Use the actual port positions to determine which side to connect from
@@ -134,20 +136,11 @@ export class EdgeRenderer {
           const fromPortIsLeft = fromPortEl.classList.contains('in');
           const toPortIsLeft = toPortEl.classList.contains('in');
           
-          // Connect from the exact port positions, not just node edges
-          if (fromPortIsLeft) {
-            fromX = (fromNodeRect.left - contentRect.left) / contentScale;
-          } else {
-            fromX = (fromNodeRect.right - contentRect.left) / contentScale;
-          }
-          
-          if (toPortIsLeft) {
-            toX = (toNodeRect.left - contentRect.left) / contentScale;
-          } else {
-            toX = (toNodeRect.right - contentRect.left) / contentScale;
-          }
-          
-          // Override Y position to use exact port Y coordinate
+          // Start and end exactly at the port center (no snapping to node edge)
+          fromX = (fromPortRect.left + fromPortRect.width / 2 - contentRect.left) / contentScale;
+          toX = (toPortRect.left + toPortRect.width / 2 - contentRect.left) / contentScale;
+
+          // Use exact port Y coordinates
           fromY = (fromPortRect.top + fromPortRect.height / 2 - contentRect.top) / contentScale;
           toY = (toPortRect.top + toPortRect.height / 2 - contentRect.top) / contentScale;
         } else {
@@ -172,8 +165,10 @@ export class EdgeRenderer {
         toY = (toRect.top + toRect.height / 2 - contentRect.top) / contentScale;
         
         // Try to find the actual port elements even in fallback
-        const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.out`);
-        const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.in`);
+        const fromSelectorSide = edge?.from?.side || 'out';
+        const toSelectorSide = edge?.to?.side || 'in';
+        const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.${fromSelectorSide}`);
+        const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.${toSelectorSide}`);
         
         if (fromPortEl && toPortEl) {
           // Use the actual port positions for precise connections
@@ -214,17 +209,19 @@ export class EdgeRenderer {
     return { fromX, fromY, toX, toY };
   }
 
-  generateEdgePath(fromX, fromY, toX, toY, fromVariable, toVariable) {
-    // Determine connection sides based on actual port positions
-    let fromSide = 'right'; // default
-    let toSide = 'left'; // default
+  generateEdgePath(fromX, fromY, toX, toY, edge, fromVariable, toVariable) {
+    // Prefer persisted sides from the edge object (exact user-selected ports)
+    let fromSide = edge?.from?.side ? (edge.from.side === 'in' ? 'left' : 'right') : 'right';
+    let toSide = edge?.to?.side ? (edge.to.side === 'in' ? 'left' : 'right') : 'left';
+
+    // Also look up port elements using those sides for geometry fallback/refinement
+    const selFromSide = edge?.from?.side || 'out';
+    const selToSide = edge?.to?.side || 'in';
+    const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.${selFromSide}`);
+    const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.${selToSide}`);
     
-    // Try to determine actual port sides from DOM elements
-    const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.out`);
-    const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.in`);
-    
-    if (fromPortEl && toPortEl) {
-      // Determine sides based on port classes and positions
+    if ((!edge?.from?.side || !edge?.to?.side) && fromPortEl && toPortEl) {
+      // Determine sides based on port classes and positions (fallback)
       const fromNodeEl = fromPortEl.closest('.node');
       const toNodeEl = toPortEl.closest('.node');
       
