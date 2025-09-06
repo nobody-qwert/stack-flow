@@ -214,12 +214,12 @@ input:focus, textarea:focus, select:focus {
 
 .node.api {
   border-color: #bdbdbd;
-  border-radius: 0;
+  border-radius: 8px;
 }
 
 .node.table {
   border-color: #bdbdbd;
-  border-radius: 0;
+  border-radius: 8px;
 }
 
 .node.gui {
@@ -239,13 +239,13 @@ input:focus, textarea:focus, select:focus {
 .node.api .node-header {
   background: #f2f2f2;
   color: #333;
-  border-radius: 0;
+  border-radius: 6px 6px 0 0;
 }
 
 .node.table .node-header {
   background: #f2f2f2;
   color: #333;
-  border-radius: 0;
+  border-radius: 6px 6px 0 0;
 }
 
 .node.gui .node-header {
