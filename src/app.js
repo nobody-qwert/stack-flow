@@ -10,6 +10,7 @@ import { generateNodeId, generateVariableId, generateEdgeId } from './core/id.js
 import { importApiFromJson, showApiImportDialog } from './services/importApi.js';
 import { importTableFromJson, showPgImportDialog, createSampleTableDescriptor } from './services/importPg.js';
 import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
+import { exportViewportPng } from './services/exporters.js';
 
 class DataFlowApp {
   constructor() {
@@ -191,6 +192,11 @@ class DataFlowApp {
     document.getElementById('btnExport').addEventListener('click', () => {
       downloadDiagram();
     });
+    
+    document.getElementById('btnExportPng').addEventListener('click', () => {
+      exportViewportPng();
+    });
+    
     
     document.getElementById('btnImport').addEventListener('click', () => {
       uploadDiagram();
