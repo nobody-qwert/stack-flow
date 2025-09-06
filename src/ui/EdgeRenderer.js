@@ -136,11 +136,18 @@ calculateEdgePositions(edge, fromVariable, toVariable, fromNode, toNode) {
           const fromPortIsLeft = fromPortEl.classList.contains('in');
           const toPortIsLeft = toPortEl.classList.contains('in');
           
-          // Start and end exactly at the port center (no snapping to node edge)
-          fromX = (fromPortRect.left + fromPortRect.width / 2 - contentRect.left) / contentScale;
-          toX = (toPortRect.left + toPortRect.width / 2 - contentRect.left) / contentScale;
+          // Anchor at the node's outer edge (slightly outside) while keeping the port's Y center
+          const edgeMargin = 1; // px offset outward so arrow stays visible outside node
+          const marginUnits = edgeMargin / contentScale;
 
-          // Use exact port Y coordinates
+          fromX = (fromPortIsLeft
+            ? (fromNodeRect.left - contentRect.left) / contentScale - marginUnits
+            : (fromNodeRect.right - contentRect.left) / contentScale + marginUnits);
+          toX = (toPortIsLeft
+            ? (toNodeRect.left - contentRect.left) / contentScale - marginUnits
+            : (toNodeRect.right - contentRect.left) / contentScale + marginUnits);
+
+          // Keep Y anchored to exact port centers
           fromY = (fromPortRect.top + fromPortRect.height / 2 - contentRect.top) / contentScale;
           toY = (toPortRect.top + toPortRect.height / 2 - contentRect.top) / contentScale;
         } else {
