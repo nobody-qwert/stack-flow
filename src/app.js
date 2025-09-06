@@ -1011,7 +1011,7 @@ class DataFlowApp {
         <div class="variables-list">
           ${node.variables.map(variable => `
             <div class="variable-item" data-variable-id="${variable.id}">
-              <button type="button" class="var-drag-handle" title="Drag to reorder" tabindex="0" aria-label="Reorder" style="width:18px;min-width:18px;display:flex;align-items:center;justify-content:center;color:#888;border:1px dashed #ddd;border-radius:4px;background:#fff;user-select:none;">≡</button>
+              <button type="button" class="var-drag-handle" title="Drag to reorder" tabindex="0" aria-label="Reorder" style="width:10px;height:18px;min-width:10px;display:flex;align-items:center;justify-content:center;color:#777;border:1px dashed #ccc;border-radius:2px;background:#fff;user-select:none;padding:0;margin-right:2px;font-size:10px;line-height:1;opacity:0.7">⋮</button>
               <div class="variable-edit-row">
                 <input type="text" class="var-name-input" value="${variable.name}" placeholder="Variable name">
                 <select class="var-type-select">
@@ -1044,6 +1044,7 @@ class DataFlowApp {
   }
 
   setupNodeInspectorHandlers(node) {
+    console.log('setupNodeInspectorHandlers: start for node', node?.id, 'type=', node?.type);
     // Title input
     const titleInput = document.getElementById('nodeTitle');
     titleInput.addEventListener('change', () => {
@@ -1122,7 +1123,8 @@ class DataFlowApp {
 
       // Delegated Alt+ArrowUp/Down keyboard reordering for any focused control within a row
       list.addEventListener('keydown', (e) => {
-        if (!e.altKey) return;
+        const modOk = e.altKey || e.ctrlKey;
+        if (!modOk) return;
         if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
         const row = e.target.closest('.variable-item');
         if (!row) return;
@@ -1185,7 +1187,9 @@ class DataFlowApp {
       };
 
       // Attach handlers to each grab handle
-      list.querySelectorAll('.var-drag-handle').forEach(handle => {
+      const handles = list.querySelectorAll('.var-drag-handle');
+      console.log('Inspector: found var-drag-handles =', handles.length);
+      handles.forEach(handle => {
         handle.addEventListener('mousedown', (e) => {
           e.preventDefault();
           e.stopPropagation();
