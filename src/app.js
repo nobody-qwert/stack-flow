@@ -5,10 +5,8 @@
 import { store } from './core/store.js';
 import { eventBus, EVENTS } from './core/eventBus.js';
 import { commandStack, setupKeyboardShortcuts } from './core/commandStack.js';
-import { NODE_TYPES, IO_TYPES, createNode, createVariable, createDiagram } from './core/types.js';
+import { NODE_TYPES, createNode, createVariable, createDiagram } from './core/types.js';
 import { generateNodeId, generateVariableId, generateEdgeId } from './core/id.js';
-import { importApiFromJson, showApiImportDialog } from './services/importApi.js';
-import { importTableFromJson, showPgImportDialog, createSampleTableDescriptor } from './services/importPg.js';
 import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
 import { exportViewportPng } from './services/exporters.js';
 import { buildShareUrlFromState, importFromUrlIfPresent, copyToClipboard } from './services/share.js';
@@ -182,13 +180,6 @@ class DataFlowApp {
       this.createNode(NODE_TYPES.GUI);
     });
     
-    document.getElementById('btnImportApi').addEventListener('click', () => {
-      this.importApi();
-    });
-    
-    document.getElementById('btnImportPg').addEventListener('click', () => {
-      this.importPg();
-    });
     
     document.getElementById('btnExport').addEventListener('click', () => {
       downloadDiagram();
@@ -245,42 +236,12 @@ class DataFlowApp {
     // Add a sample variable
     const variable = createVariable('sample_field');
     variable.id = generateVariableId();
-    variable.io = type === NODE_TYPES.API ? IO_TYPES.OUT : IO_TYPES.BOTH;
     node.variables = [variable];
     
     store.addNode(node);
     store.setSelection('node', node.id);
   }
 
-  async importApi() {
-    try {
-      const input = await showApiImportDialog();
-      if (input) {
-        input.position = this.getNewNodePosition();
-        const node = importApiFromJson(input);
-        store.addNode(node);
-        store.setSelection('node', node.id);
-      }
-    } catch (error) {
-      console.error('Failed to import API:', error);
-      alert('Failed to import API: ' + error.message);
-    }
-  }
-
-  async importPg() {
-    try {
-      const input = await showPgImportDialog();
-      if (input) {
-        input.position = this.getNewNodePosition();
-        const node = importTableFromJson(input);
-        store.addNode(node);
-        store.setSelection('node', node.id);
-      }
-    } catch (error) {
-      console.error('Failed to import table:', error);
-      alert('Failed to import table: ' + error.message);
-    }
-  }
  
   newDiagram() {
     const state = store.getState();
@@ -405,24 +366,93 @@ class DataFlowApp {
       const fromRect = fromVarEl.getBoundingClientRect();
       const toRect = toVarEl.getBoundingClientRect();
       
-      // Decide flow direction primarily left-to-right
+      // Get node elements and their positions
       const fromNodeEl = document.querySelector(`.node[data-node-id="${fromNode.id}"]`);
       const toNodeEl = document.querySelector(`.node[data-node-id="${toNode.id}"]`);
-      const preferRight = !fromNodeEl || !toNodeEl
-        ? (fromRect.left <= toRect.left)
-        : (fromNodeEl.getBoundingClientRect().left <= toNodeEl.getBoundingClientRect().left);
       
-      // Keep Y at the variable row center
-      fromY = (fromRect.top + fromRect.height / 2 - contentRect.top) / contentScale;
-      toY = (toRect.top + toRect.height / 2 - contentRect.top) / contentScale;
+      if (fromNodeEl && toNodeEl) {
+        const fromNodeRect = fromNodeEl.getBoundingClientRect();
+        const toNodeRect = toNodeEl.getBoundingClientRect();
+        
+        // Keep Y at the variable row center
+        fromY = (fromRect.top + fromRect.height / 2 - contentRect.top) / contentScale;
+        toY = (toRect.top + toRect.height / 2 - contentRect.top) / contentScale;
 
-      // Anchor X to node outer edges with a small pad so tips are fully outside the border
-      const fromNodeRect = fromNodeEl ? fromNodeEl.getBoundingClientRect() : fromRect;
-      const toNodeRect = toNodeEl ? toNodeEl.getBoundingClientRect() : toRect;
-      const edgePad = 0;
-
-      fromX = ((preferRight ? fromNodeRect.right + edgePad : fromNodeRect.left - edgePad) - contentRect.left) / contentScale;
-      toX = ((preferRight ? toNodeRect.left - edgePad : toNodeRect.right + edgePad) - contentRect.left) / contentScale;
+        // Find the actual port elements to determine exact connection points
+        const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.out`);
+        const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.in`);
+        
+        if (fromPortEl && toPortEl) {
+          // Use the actual port positions for precise connections
+          const fromPortRect = fromPortEl.getBoundingClientRect();
+          const toPortRect = toPortEl.getBoundingClientRect();
+          
+          // Connect from the center of the actual ports
+          fromX = (fromPortRect.left + fromPortRect.width / 2 - contentRect.left) / contentScale;
+          toX = (toPortRect.left + toPortRect.width / 2 - contentRect.left) / contentScale;
+        } else {
+          // Fallback: determine which sides to connect based on node positions
+          const fromNodeCenterX = fromNodeRect.left + fromNodeRect.width / 2;
+          const toNodeCenterX = toNodeRect.left + toNodeRect.width / 2;
+          
+          // Connect from the side that's closest to the target node
+          if (fromNodeCenterX <= toNodeCenterX) {
+            // From node is to the left, connect from right side to left side
+            fromX = (fromNodeRect.right - contentRect.left) / contentScale;
+            toX = (toNodeRect.left - contentRect.left) / contentScale;
+          } else {
+            // From node is to the right, connect from left side to right side  
+            fromX = (fromNodeRect.left - contentRect.left) / contentScale;
+            toX = (toNodeRect.right - contentRect.left) / contentScale;
+          }
+        }
+      } else {
+        // Fallback if nodes not found - still try to use port positions
+        fromY = (fromRect.top + fromRect.height / 2 - contentRect.top) / contentScale;
+        toY = (toRect.top + toRect.height / 2 - contentRect.top) / contentScale;
+        
+        // Try to find the actual port elements even in fallback
+        const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.out`);
+        const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.in`);
+        
+        if (fromPortEl && toPortEl) {
+          // Use the actual port positions for precise connections
+          const fromPortRect = fromPortEl.getBoundingClientRect();
+          const toPortRect = toPortEl.getBoundingClientRect();
+          
+          // Connect from the center of the actual ports
+          fromX = (fromPortRect.left + fromPortRect.width / 2 - contentRect.left) / contentScale;
+          toX = (toPortRect.left + toPortRect.width / 2 - contentRect.left) / contentScale;
+        } else {
+          // Get the node elements for edge positioning as final fallback
+          const fromNodeEl = document.querySelector(`.node[data-node-id="${fromNode.id}"]`);
+          const toNodeEl = document.querySelector(`.node[data-node-id="${toNode.id}"]`);
+          
+          if (fromNodeEl && toNodeEl) {
+            const fromNodeRect = fromNodeEl.getBoundingClientRect();
+            const toNodeRect = toNodeEl.getBoundingClientRect();
+            
+            // Determine which sides to connect based on node positions
+            const fromNodeCenterX = fromNodeRect.left + fromNodeRect.width / 2;
+            const toNodeCenterX = toNodeRect.left + toNodeRect.width / 2;
+            
+            // Connect from the side that's closest to the target node
+            if (fromNodeCenterX <= toNodeCenterX) {
+              // From node is to the left, connect from right side to left side
+              fromX = (fromNodeRect.right - contentRect.left) / contentScale;
+              toX = (toNodeRect.left - contentRect.left) / contentScale;
+            } else {
+              // From node is to the right, connect from left side to right side  
+              fromX = (fromNodeRect.left - contentRect.left) / contentScale;
+              toX = (toNodeRect.right - contentRect.left) / contentScale;
+            }
+          } else {
+            // Final fallback - use variable centers but this should rarely happen
+            fromX = (fromRect.left + fromRect.width / 2 - contentRect.left) / contentScale;
+            toX = (toRect.left + toRect.width / 2 - contentRect.left) / contentScale;
+          }
+        }
+      }
     } else {
       // Fallback to approximate positions
       const fromNodeEl = document.querySelector(`.node[data-node-id="${fromNode.id}"]`);
@@ -439,8 +469,10 @@ class DataFlowApp {
       fromY = fromNode.position.y + nodeHeaderHeight + variableGroupHeaderHeight + (fromVarIndex * variableHeight) + variableHeight / 2;
       toY = toNode.position.y + nodeHeaderHeight + variableGroupHeaderHeight + (toVarIndex * variableHeight) + variableHeight / 2;
       
-      fromX = fromNode.position.x + (fromVariable.io === IO_TYPES.IN ? 0 : fromNodeWidth);
-      toX = toNode.position.x + (toVariable.io === IO_TYPES.OUT ? toNodeWidth : 0);
+      // Position edges left-to-right based on node positions
+      const preferRight = fromNode.position.x <= toNode.position.x;
+      fromX = fromNode.position.x + (preferRight ? fromNodeWidth : 0);
+      toX = toNode.position.x + (preferRight ? 0 : toNodeWidth);
     }
     
     // Endpoints already placed outside node border by edgePad; no extra nudge needed.
@@ -450,9 +482,13 @@ class DataFlowApp {
     g.setAttribute('class', 'edge-group');
     g.dataset.edgeId = edge.id;
     
-    // Create curved path data
-    const controlPointOffset = Math.max(40, Math.abs(toX - fromX) * 0.5);
-    const pathData = `M ${fromX} ${fromY} C ${fromX + controlPointOffset} ${fromY}, ${toX - controlPointOffset} ${toY}, ${toX} ${toY}`;
+    // Create smooth but direct path data (less curl), with straight line for very short spans
+    const dx = Math.abs(toX - fromX);
+    const dy = Math.abs(toY - fromY);
+    const controlPointOffset = Math.min(120, Math.max(30, dx * 0.25));
+    const pathData = dx < 60
+      ? `M ${fromX} ${fromY} L ${toX} ${toY}`
+      : `M ${fromX} ${fromY} C ${fromX + controlPointOffset} ${fromY}, ${toX - controlPointOffset} ${toY}, ${toX} ${toY}`;
     
     // Create invisible hit area path (wider stroke for easier clicking)
     const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -643,7 +679,7 @@ class DataFlowApp {
       element.classList.add('custom-bg');
     }
     
-    // Ports: black dots; show both sides when io === 'both'
+    // Ports: black dots; always show both sides
     const makePort = (side) => {
       const p = document.createElement('div');
       p.className = `variable-port ${side}`;
@@ -652,14 +688,8 @@ class DataFlowApp {
       element.appendChild(p);
       this.makePortConnectable(p, variable);
     };
-    if (variable.io === IO_TYPES.BOTH || variable.io === 'both') {
-      makePort('in');
-      makePort('out');
-    } else if (variable.io === IO_TYPES.IN || variable.io === 'in') {
-      makePort('in');
-    } else {
-      makePort('out');
-    }
+    makePort('in');
+    makePort('out');
     
     // Name
     const name = document.createElement('div');
@@ -731,14 +761,9 @@ class DataFlowApp {
       const varRow = portElement.closest('.variable');
       const varRect = varRow ? varRow.getBoundingClientRect() : portRect;
       
-      // Determine port side and anchor to node outer edge with small pad so line is visible
-      const useLeft = (portRect.left - varRect.left) < (varRect.width / 2);
-      const nodeEl = portElement.closest('.node');
-      const nodeRect = nodeEl ? nodeEl.getBoundingClientRect() : varRect;
-      const edgePad = 0;
-      
-      const startX = (((useLeft ? nodeRect.left : nodeRect.right) - contentRect.left) / contentScale) + (useLeft ? -edgePad : edgePad);
-      const startY = ((varRect.top + varRect.height / 2) - contentRect.top) / contentScale;
+      // Start the connection from the exact center of the clicked port
+      const startX = (portRect.left + portRect.width / 2 - contentRect.left) / contentScale;
+      const startY = (portRect.top + portRect.height / 2 - contentRect.top) / contentScale;
       
       connectionLine.setAttribute('x1', startX);
       connectionLine.setAttribute('y1', startY);
@@ -750,7 +775,7 @@ class DataFlowApp {
       portElement.classList.add('port-active');
       
       // Store connection state
-      const fromSide = portElement.dataset.portSide || (useLeft ? 'in' : 'out');
+      const fromSide = portElement.dataset.portSide;
       this.connectionState = {
         fromVariable: variable,
         fromPort: portElement,
@@ -763,17 +788,11 @@ class DataFlowApp {
       const allPorts = document.querySelectorAll('.variable-port');
       const originNodeEl = portElement.closest('.node');
       allPorts.forEach(p => {
-        const side = p.dataset.portSide || (p.classList.contains('in') ? 'in' : (p.classList.contains('out') ? 'out' : ''));
-        if (!side) return;
         const pNode = p.closest('.node');
-        // Disable all ports within the same node as the origin (including opposite side)
-        if (pNode === originNodeEl) {
+        // Disable all ports within the same node as the origin and the origin port itself
+        if (pNode === originNodeEl || p === portElement) {
           p.classList.add('ineligible');
           p.classList.remove('eligible');
-          return;
-        }
-        if (side === fromSide) {
-          p.classList.add('ineligible');
         } else {
           p.classList.add('eligible');
           p.closest('.variable')?.classList.add('eligible-target');
@@ -805,8 +824,6 @@ class DataFlowApp {
 
       const isValidTarget = (el) => {
         if (!el) return false;
-        const side = el.dataset.portSide || (el.classList.contains('in') ? 'in' : (el.classList.contains('out') ? 'out' : ''));
-        if (!side || !fromSide || side === fromSide) return false;
         const nodeEl = el.closest('.node');
         if (!nodeEl || nodeEl === originNodeEl) return false;
         return true;
@@ -860,18 +877,12 @@ class DataFlowApp {
         const targetVariableId = targetPort.dataset.variableId;
         const targetNodeElement = targetPort.closest('.node');
         const targetNodeId = targetNodeElement?.dataset.nodeId;
-        const targetSide = targetPort.dataset.portSide || (targetPort.classList.contains('in') ? 'in' : (targetPort.classList.contains('out') ? 'out' : ''));
-        const fromSide = this.connectionState?.fromSide || (portElement.classList.contains('in') ? 'in' : (portElement.classList.contains('out') ? 'out' : ''));
         const currentNodeElement = portElement.closest('.node');
         const currentNodeId = currentNodeElement?.dataset.nodeId;
-        
-        if (targetNodeId && targetVariableId && fromSide && targetSide && fromSide !== targetSide && targetNodeId !== currentNodeId) {
-          if (fromSide === 'out' && targetSide === 'in') {
-            this.createConnection(this.connectionState.fromVariable, variable, targetNodeId, targetVariableId);
-          } else if (fromSide === 'in' && targetSide === 'out') {
-            // Edge should be from OUT (target) to IN (current)
-            this.createConnection({ id: targetVariableId }, variable, currentNodeId, variable.id);
-          }
+
+        // Allow connections between any ports as long as nodes differ
+        if (targetNodeId && targetVariableId && targetNodeId !== currentNodeId) {
+          this.createConnection(this.connectionState.fromVariable, variable, targetNodeId, targetVariableId);
         }
       }
       
@@ -1052,11 +1063,6 @@ class DataFlowApp {
                   <option value="json" ${variable.dataType === 'json' ? 'selected' : ''}>JSON</option>
                   <option value="array" ${variable.dataType === 'array' ? 'selected' : ''}>Array</option>
                 </select>
-                <select class="var-io-select">
-                  <option value="in" ${variable.io === 'in' ? 'selected' : ''}>Input</option>
-                  <option value="out" ${variable.io === 'out' ? 'selected' : ''}>Output</option>
-                  <option value="both" ${variable.io === 'both' ? 'selected' : ''}>Both</option>
-                </select>
                 <button class="var-color-btn" data-variable-id="${variable.id}" title="Change color" style="background: ${variable.color || '#f8f9fa'}; width: 20px; height: 20px; border: 1px solid #ccc; border-radius: 3px; padding: 0; margin: 0 2px;"></button>
                 <button class="delete-var-btn" title="Delete variable">×</button>
               </div>
@@ -1105,11 +1111,6 @@ class DataFlowApp {
         store.updateVariable(node.id, variableId, { dataType: typeSelect.value });
       });
       
-      // Variable IO select
-      const ioSelect = item.querySelector('.var-io-select');
-      ioSelect.addEventListener('change', () => {
-        store.updateVariable(node.id, variableId, { io: ioSelect.value });
-      });
       
       // Color button handler
       const colorBtn = item.querySelector('.var-color-btn');
@@ -1277,7 +1278,7 @@ class DataFlowApp {
       });
 
       // Also allow Alt+ArrowUp/Down when editing fields within the row
-      list.querySelectorAll('.variable-item .var-name-input, .variable-item .var-type-select, .variable-item .var-io-select').forEach(el => {
+      list.querySelectorAll('.variable-item .var-name-input, .variable-item .var-type-select').forEach(el => {
         el.addEventListener('keydown', (e) => {
           if (!e.altKey) return;
           if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;

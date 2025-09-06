@@ -203,10 +203,9 @@ export function flattenJson(obj, prefix = '', maxDepth = 3) {
 /**
  * Create variables from flattened JSON object
  * @param {Object} flatObj - Flattened object
- * @param {string} ioType - IO type for variables
  * @returns {Array} Array of variable objects (without IDs)
  */
-export function createVariablesFromJson(flatObj, ioType = 'out') {
+export function createVariablesFromJson(flatObj) {
   return Object.entries(flatObj).map(([name, value]) => {
     const inferredFromValue = inferTypeFromValue(value);
     const inferredFromName = inferTypeFromPropertyName(name);
@@ -218,7 +217,6 @@ export function createVariablesFromJson(flatObj, ioType = 'out') {
       id: null, // Will be set by ID generator
       name,
       dataType,
-      io: ioType,
       sampleValue: value,
       description: undefined
     };

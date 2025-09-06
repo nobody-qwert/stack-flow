@@ -13,7 +13,6 @@
  * @property {string} id - Unique identifier
  * @property {string} name - Variable name
  * @property {string} dataType - Normalized data type
- * @property {'in'|'out'|'both'} io - Input/output direction
  * @property {*} [sampleValue] - Optional sample value (hidden by default)
  * @property {string} [description] - Optional description
  */
@@ -71,11 +70,6 @@ export const NODE_TYPES = {
   GUI: 'gui'
 };
 
-export const IO_TYPES = {
-  IN: 'in',
-  OUT: 'out',
-  BOTH: 'both'
-};
 
 export const DATA_TYPES = {
   STRING: 'string',
@@ -107,11 +101,10 @@ export const GRID_SIZE = 20;
 // Helper functions
 export const createPosition = (x = 0, y = 0) => ({ x, y });
 
-export const createVariable = (name, dataType = DATA_TYPES.STRING, io = IO_TYPES.BOTH) => ({
+export const createVariable = (name, dataType = DATA_TYPES.STRING) => ({
   id: null, // Will be set by ID generator
   name,
   dataType,
-  io,
   sampleValue: undefined,
   description: undefined,
   color: null // optional background color for variable row (hex or null)
@@ -142,7 +135,6 @@ export const createDiagram = () => ({
 
 // Type validation helpers
 export const isValidNodeType = (type) => Object.values(NODE_TYPES).includes(type);
-export const isValidIOType = (io) => Object.values(IO_TYPES).includes(io);
 export const isValidDataType = (dataType) => Object.values(DATA_TYPES).includes(dataType);
 export const isValidEdgeStatus = (status) => Object.values(EDGE_STATUS).includes(status);
 
@@ -156,14 +148,6 @@ export const getNodeTypeColor = (type) => {
   }
 };
 
-export const getIOTypeColor = (io) => {
-  switch (io) {
-    case IO_TYPES.IN: return '#007acc';
-    case IO_TYPES.OUT: return '#28a745';
-    case IO_TYPES.BOTH: return '#ffc107';
-    default: return '#6c757d';
-  }
-};
 
 // Metadata templates for different node types
 export const createApiMetadata = (method = 'GET', url = '') => ({
