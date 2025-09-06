@@ -383,13 +383,35 @@ class DataFlowApp {
         const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.in`);
         
         if (fromPortEl && toPortEl) {
-          // Use the actual port positions for precise connections
+          // Use the actual port positions to determine which side to connect from
           const fromPortRect = fromPortEl.getBoundingClientRect();
           const toPortRect = toPortEl.getBoundingClientRect();
           
-          // Connect from the center of the actual ports
-          fromX = (fromPortRect.left + fromPortRect.width / 2 - contentRect.left) / contentScale;
-          toX = (toPortRect.left + toPortRect.width / 2 - contentRect.left) / contentScale;
+          // Determine if ports are on left or right side of their nodes
+          const fromPortIsLeft = fromPortEl.classList.contains('in');
+          const toPortIsLeft = toPortEl.classList.contains('in');
+          
+          // Connect from the exact port positions, not just node edges
+          // This ensures multiple connections between same nodes don't overlap
+          const fromPortCenterX = (fromPortRect.left + fromPortRect.width / 2 - contentRect.left) / contentScale;
+          const toPortCenterX = (toPortRect.left + toPortRect.width / 2 - contentRect.left) / contentScale;
+          
+          // Extend from port center to node edge in the appropriate direction
+          if (fromPortIsLeft) {
+            fromX = (fromNodeRect.left - contentRect.left) / contentScale;
+          } else {
+            fromX = (fromNodeRect.right - contentRect.left) / contentScale;
+          }
+          
+          if (toPortIsLeft) {
+            toX = (toNodeRect.left - contentRect.left) / contentScale;
+          } else {
+            toX = (toNodeRect.right - contentRect.left) / contentScale;
+          }
+          
+          // Override Y position to use exact port Y coordinate
+          fromY = (fromPortRect.top + fromPortRect.height / 2 - contentRect.top) / contentScale;
+          toY = (toPortRect.top + toPortRect.height / 2 - contentRect.top) / contentScale;
         } else {
           // Fallback: determine which sides to connect based on node positions
           const fromNodeCenterX = fromNodeRect.left + fromNodeRect.width / 2;
@@ -475,20 +497,154 @@ class DataFlowApp {
       toX = toNode.position.x + (preferRight ? 0 : toNodeWidth);
     }
     
-    // Endpoints already placed outside node border by edgePad; no extra nudge needed.
-    
     // Create a group to hold both the visual path and the hit area
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('class', 'edge-group');
     g.dataset.edgeId = edge.id;
     
-    // Create smooth but direct path data (less curl), with straight line for very short spans
-    const dx = Math.abs(toX - fromX);
-    const dy = Math.abs(toY - fromY);
-    const controlPointOffset = Math.min(120, Math.max(30, dx * 0.25));
-    const pathData = dx < 60
-      ? `M ${fromX} ${fromY} L ${toX} ${toY}`
-      : `M ${fromX} ${fromY} C ${fromX + controlPointOffset} ${fromY}, ${toX - controlPointOffset} ${toY}, ${toX} ${toY}`;
+    // Determine connection sides based on actual port positions
+    let fromSide = 'right'; // default
+    let toSide = 'left'; // default
+    
+    // Try to determine actual port sides from DOM elements
+    const fromPortEl = document.querySelector(`.variable[data-variable-id="${fromVariable.id}"] .variable-port.out`);
+    const toPortEl = document.querySelector(`.variable[data-variable-id="${toVariable.id}"] .variable-port.in`);
+    
+    if (fromPortEl && toPortEl) {
+      // Determine sides based on port classes and positions
+      const fromNodeEl = fromPortEl.closest('.node');
+      const toNodeEl = toPortEl.closest('.node');
+      
+      if (fromNodeEl && toNodeEl) {
+        const fromNodeRect = fromNodeEl.getBoundingClientRect();
+        const toNodeRect = toNodeEl.getBoundingClientRect();
+        const fromPortRect = fromPortEl.getBoundingClientRect();
+        const toPortRect = toPortEl.getBoundingClientRect();
+        
+        // Determine which side of the node each port is on
+        const fromNodeCenterX = fromNodeRect.left + fromNodeRect.width / 2;
+        const toNodeCenterX = toNodeRect.left + toNodeRect.width / 2;
+        
+        fromSide = fromPortRect.left < fromNodeCenterX ? 'left' : 'right';
+        toSide = toPortRect.left < toNodeCenterX ? 'left' : 'right';
+      }
+    }
+    
+    // IMPROVED SMOOTH ASYMPTOTIC BEZIER ROUTING ALGORITHM
+    const asymptoteLength = 50; // Length of straight sections that act as asymptotes
+    
+    // Calculate start and end sections (asymptotes)
+    const startX = fromSide === 'right' ? fromX + asymptoteLength : fromX - asymptoteLength;
+    const endX = toSide === 'left' ? toX - asymptoteLength : toX + asymptoteLength;
+    
+    let pathData;
+    
+    // Calculate the routing based on the connection geometry
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Determine routing strategy based on connection layout
+    const isSimpleLeftToRight = fromSide === 'right' && toSide === 'left' && dx > 0;
+    const isSameSideConnection = fromSide === toSide;
+    const isBackwardsConnection = (fromSide === 'right' && toSide === 'left' && dx < 0) || 
+                                  (fromSide === 'left' && toSide === 'right' && dx > 0);
+    
+    // Calculate adaptive control distances based on geometry
+    const baseControlDistance = Math.min(Math.max(60, distance * 0.25), 150);
+    const verticalInfluence = Math.min(Math.abs(dy) * 0.3, 100);
+    const horizontalInfluence = Math.min(Math.abs(dx) * 0.2, 100);
+    
+    if (isSimpleLeftToRight) {
+      // Simple smooth curve for straightforward left-to-right connections
+      // Use adaptive control distance that considers both horizontal and vertical separation
+      const controlDistance = baseControlDistance + verticalInfluence;
+      const fromControlX = startX + controlDistance;
+      const toControlX = endX - controlDistance;
+      
+      pathData = `M ${fromX} ${fromY} 
+                 L ${startX} ${fromY}
+                 C ${fromControlX} ${fromY}, ${toControlX} ${toY}, ${endX} ${toY}
+                 L ${toX} ${toY}`;
+    } else if (isSameSideConnection) {
+      // Same-side connections: create a smooth loop that goes around
+      const routingOffset = Math.max(120, Math.abs(dy) * 0.5 + 100);
+      const routingX = fromSide === 'right' ? 
+        Math.max(fromX, toX) + routingOffset : 
+        Math.min(fromX, toX) - routingOffset;
+      
+      // Use smooth curves with proper control point spacing
+      const controlDistance = Math.max(80, routingOffset * 0.4);
+      const midY = fromY + (toY - fromY) * 0.5;
+      
+      // Create a smooth S-curve with well-spaced control points
+      pathData = `M ${fromX} ${fromY} 
+                 L ${startX} ${fromY}
+                 C ${startX + controlDistance * (fromSide === 'right' ? 1 : -1)} ${fromY}, 
+                   ${routingX - controlDistance * (fromSide === 'right' ? 1 : -1)} ${fromY + (midY - fromY) * 0.7}, 
+                   ${routingX} ${midY}
+                 C ${routingX + controlDistance * (toSide === 'left' ? -1 : 1)} ${midY + (toY - midY) * 0.3}, 
+                   ${endX - controlDistance * (toSide === 'left' ? -1 : 1)} ${toY}, 
+                   ${endX} ${toY}
+                 L ${toX} ${toY}`;
+    } else if (isBackwardsConnection) {
+      // Backwards connections: create a smooth arc that avoids sharp angles
+      const routingOffset = Math.max(150, Math.abs(dy) * 0.6 + 120);
+      const routingX = fromSide === 'right' ? 
+        Math.max(fromX, toX) + routingOffset : 
+        Math.min(fromX, toX) - routingOffset;
+      
+      // Create a wide, smooth arc
+      const controlDistance = Math.max(100, routingOffset * 0.5);
+      const arcHeight = Math.max(80, Math.abs(dy) * 0.4 + 60);
+      const midY = fromY + (toY - fromY) * 0.5;
+      const arcY = midY + (fromY < toY ? -arcHeight : arcHeight);
+      
+      pathData = `M ${fromX} ${fromY} 
+                 L ${startX} ${fromY}
+                 C ${startX + controlDistance * (fromSide === 'right' ? 1 : -1)} ${fromY}, 
+                   ${routingX - controlDistance * (fromSide === 'right' ? 1 : -1)} ${arcY}, 
+                   ${routingX} ${arcY}
+                 C ${routingX + controlDistance * (toSide === 'left' ? -1 : 1)} ${arcY}, 
+                   ${endX - controlDistance * (toSide === 'left' ? -1 : 1)} ${toY}, 
+                   ${endX} ${toY}
+                 L ${toX} ${toY}`;
+    } else {
+      // Standard routing for other cases
+      const needsComplexRouting = Math.abs(dy) > 150 || Math.abs(dx) < 100;
+      
+      if (needsComplexRouting) {
+        // Multi-segment routing with smooth transitions
+        const midX = startX + (endX - startX) * 0.5;
+        const controlDistance = Math.max(60, Math.min(Math.abs(dx) * 0.3, Math.abs(dy) * 0.2, 120));
+        
+        // Create a smooth path with three segments
+        const segment1EndX = midX - controlDistance;
+        const segment2StartX = midX + controlDistance;
+        
+        pathData = `M ${fromX} ${fromY} 
+                   L ${startX} ${fromY}
+                   C ${startX + controlDistance} ${fromY}, 
+                     ${segment1EndX} ${fromY}, 
+                     ${segment1EndX} ${fromY + (toY - fromY) * 0.2}
+                   L ${segment1EndX} ${toY - (toY - fromY) * 0.2}
+                   C ${segment1EndX} ${toY}, 
+                     ${segment2StartX} ${toY}, 
+                     ${endX - controlDistance} ${toY}
+                   C ${endX} ${toY}, ${endX} ${toY}, ${endX} ${toY}
+                   L ${toX} ${toY}`;
+      } else {
+        // Simple smooth curve for normal cases
+        const controlDistance = baseControlDistance + horizontalInfluence + verticalInfluence;
+        const fromControlX = startX + (endX > startX ? controlDistance : -controlDistance);
+        const toControlX = endX - (endX > startX ? controlDistance : -controlDistance);
+        
+        pathData = `M ${fromX} ${fromY} 
+                   L ${startX} ${fromY}
+                   C ${fromControlX} ${fromY}, ${toControlX} ${toY}, ${endX} ${toY}
+                   L ${toX} ${toY}`;
+      }
+    }
     
     // Create invisible hit area path (wider stroke for easier clicking)
     const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
