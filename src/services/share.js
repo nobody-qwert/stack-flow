@@ -8,6 +8,17 @@
 
 import { exportDiagram, importDiagram } from './persistence.js';
 
+function getShareBaseUrl() {
+  try {
+    const meta = document.querySelector('meta[name="app-canonical-base"]');
+    const content = meta?.getAttribute('content');
+    if (content) {
+      return content;
+    }
+  } catch {}
+  return window.location.origin + window.location.pathname + window.location.search;
+}
+
 /**
  * Ensure LZ-String is available on window.
  * Dynamically loads from CDN if not already present.
@@ -65,7 +76,7 @@ export async function buildShareUrlFromState(maxUrlLength = 15000) {
   const LZ = await ensureLZString();
   const json = exportDiagram(); // string
   const token = LZ.compressToEncodedURIComponent(json);
-  const base = window.location.origin + window.location.pathname + window.location.search;
+  const base = getShareBaseUrl();
   const url = `${base}#d=${token}`;
 
   if (url.length > maxUrlLength) {
