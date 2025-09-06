@@ -415,7 +415,7 @@ input:focus, textarea:focus, select:focus {
   width: 336px;
   background: #f8f8f8;
   border-left: 1px solid #e0e0e0;
-  padding: 16px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -774,3 +774,18 @@ input:focus, textarea:focus, select:focus {
     right: 0;
   }
 }
+
+/* Inspector variables list tight spacing */
+.variables-list { padding: 0; }
+.variables-list .variable-item { padding: 4px 4px; gap: 3px; }
+.variables-list .variable-edit-row { gap: 3px; }
+.variables-list .delete-var-btn { width: 18px; height: 18px; }
+.variables-list .var-type-select,
+.variables-list .var-io-select { min-width: 56px; }
+
+/* Inspector layout padding adjustments */
+.inspector .form-group { padding: 0; }
+.inspector .form-group:has(.variables-list) { padding-left: 0; padding-right: 0; }
+
+/* Bleed the variables list to panel edges to eliminate side gaps */
+.inspector .variables-list { margin-left: 0; margin-right: 0; }
