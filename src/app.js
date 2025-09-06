@@ -11,6 +11,7 @@ import { importApiFromJson, showApiImportDialog } from './services/importApi.js'
 import { importTableFromJson, showPgImportDialog, createSampleTableDescriptor } from './services/importPg.js';
 import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
 import { exportViewportPng } from './services/exporters.js';
+import { buildShareUrlFromState, importFromUrlIfPresent, copyToClipboard } from './services/share.js';
 
 class DataFlowApp {
   constructor() {
@@ -46,8 +47,8 @@ class DataFlowApp {
       this.render(state);
     });
     
-    // Load saved diagram if available
-    this.loadSavedDiagram();
+    // Load from shared link if present; else saved diagram
+    this.loadInitialDiagram();
     
     // Initial render
     this.render(store.getState());
@@ -196,6 +197,16 @@ class DataFlowApp {
     document.getElementById('btnExportPng').addEventListener('click', () => {
       exportViewportPng();
     });
+
+    document.getElementById('btnShare').addEventListener('click', async () => {
+      try {
+        const url = await buildShareUrlFromState();
+        await copyToClipboard(url);
+        alert('Share link copied to clipboard');
+      } catch (err) {
+        alert('Failed to build share link: ' + (err?.message || err));
+      }
+    });
     
     
     document.getElementById('btnImport').addEventListener('click', () => {
@@ -315,6 +326,18 @@ class DataFlowApp {
       if (shouldLoad) {
         loadDiagramFromStorage();
       }
+    }
+  }
+
+  async loadInitialDiagram() {
+    try {
+      const imported = await importFromUrlIfPresent();
+      if (!imported) {
+        this.loadSavedDiagram();
+      }
+    } catch (e) {
+      // On error, fall back to saved diagram flow
+      this.loadSavedDiagram();
     }
   }
 
