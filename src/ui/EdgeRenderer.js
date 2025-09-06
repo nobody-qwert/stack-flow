@@ -240,120 +240,33 @@ calculateEdgePositions(edge, fromVariable, toVariable, fromNode, toNode) {
       }
     }
     
-    // IMPROVED SMOOTH ASYMPTOTIC BEZIER ROUTING ALGORITHM
-    const asymptoteLength = 50; // Length of straight sections that act as asymptotes
-    
-    // Calculate start and end sections (asymptotes)
-    const startX = fromSide === 'right' ? fromX + asymptoteLength : fromX - asymptoteLength;
-    const endX = toSide === 'left' ? toX - asymptoteLength : toX + asymptoteLength;
-    
-    // Calculate the routing based on the connection geometry
+    // SMOOTH SINGLE-BEZIER ROUTING (no sharp joins)
     const dx = toX - fromX;
     const dy = toY - fromY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Determine routing strategy based on connection layout
-    const isSimpleLeftToRight = fromSide === 'right' && toSide === 'left' && dx > 0;
-    const isSameSideConnection = fromSide === toSide;
-    const isBackwardsConnection = (fromSide === 'right' && toSide === 'left' && dx < 0) || 
-                                  (fromSide === 'left' && toSide === 'right' && dx > 0);
-    
-    // Calculate adaptive control distances based on geometry
-    const baseControlDistance = Math.min(Math.max(60, distance * 0.25), 150);
-    const verticalInfluence = Math.min(Math.abs(dy) * 0.3, 100);
-    const horizontalInfluence = Math.min(Math.abs(dx) * 0.2, 100);
-    
-    let pathData;
-    
-    if (isSimpleLeftToRight) {
-      // Simple smooth curve for straightforward left-to-right connections
-      const controlDistance = baseControlDistance + verticalInfluence;
-      const fromControlX = startX + controlDistance;
-      const toControlX = endX - controlDistance;
-      
-      pathData = `M ${fromX} ${fromY} 
-                 L ${startX} ${fromY}
-                 C ${fromControlX} ${fromY}, ${toControlX} ${toY}, ${endX} ${toY}
-                 L ${toX} ${toY}`;
-    } else if (isSameSideConnection) {
-      // Same-side connections: create a smooth loop that goes around
-      const routingOffset = Math.max(120, Math.abs(dy) * 0.5 + 100);
-      const routingX = fromSide === 'right' ? 
-        Math.max(fromX, toX) + routingOffset : 
-        Math.min(fromX, toX) - routingOffset;
-      
-      // Use smooth curves with proper control point spacing
-      const controlDistance = Math.max(80, routingOffset * 0.4);
-      const midY = fromY + (toY - fromY) * 0.5;
-      
-      // Create a smooth S-curve with well-spaced control points
-      pathData = `M ${fromX} ${fromY} 
-                 L ${startX} ${fromY}
-                 C ${startX + controlDistance * (fromSide === 'right' ? 1 : -1)} ${fromY}, 
-                   ${routingX - controlDistance * (fromSide === 'right' ? 1 : -1)} ${fromY + (midY - fromY) * 0.7}, 
-                   ${routingX} ${midY}
-                 C ${routingX + controlDistance * (toSide === 'left' ? -1 : 1)} ${midY + (toY - midY) * 0.3}, 
-                   ${endX - controlDistance * (toSide === 'left' ? -1 : 1)} ${toY}, 
-                   ${endX} ${toY}
-                 L ${toX} ${toY}`;
-    } else if (isBackwardsConnection) {
-      // Backwards connections: create a smooth arc that avoids sharp angles
-      const routingOffset = Math.max(150, Math.abs(dy) * 0.6 + 120);
-      const routingX = fromSide === 'right' ? 
-        Math.max(fromX, toX) + routingOffset : 
-        Math.min(fromX, toX) - routingOffset;
-      
-      // Create a wide, smooth arc
-      const controlDistance = Math.max(100, routingOffset * 0.5);
-      const arcHeight = Math.max(80, Math.abs(dy) * 0.4 + 60);
-      const midY = fromY + (toY - fromY) * 0.5;
-      const arcY = midY + (fromY < toY ? -arcHeight : arcHeight);
-      
-      pathData = `M ${fromX} ${fromY} 
-                 L ${startX} ${fromY}
-                 C ${startX + controlDistance * (fromSide === 'right' ? 1 : -1)} ${fromY}, 
-                   ${routingX - controlDistance * (fromSide === 'right' ? 1 : -1)} ${arcY}, 
-                   ${routingX} ${arcY}
-                 C ${routingX + controlDistance * (toSide === 'left' ? -1 : 1)} ${arcY}, 
-                   ${endX - controlDistance * (toSide === 'left' ? -1 : 1)} ${toY}, 
-                   ${endX} ${toY}
-                 L ${toX} ${toY}`;
-    } else {
-      // Standard routing for other cases
-      const needsComplexRouting = Math.abs(dy) > 150 || Math.abs(dx) < 100;
-      
-      if (needsComplexRouting) {
-        // Multi-segment routing with smooth transitions
-        const midX = startX + (endX - startX) * 0.5;
-        const controlDistance = Math.max(60, Math.min(Math.abs(dx) * 0.3, Math.abs(dy) * 0.2, 120));
-        
-        // Create a smooth path with three segments
-        const segment1EndX = midX - controlDistance;
-        const segment2StartX = midX + controlDistance;
-        
-        pathData = `M ${fromX} ${fromY} 
-                   L ${startX} ${fromY}
-                   C ${startX + controlDistance} ${fromY}, 
-                     ${segment1EndX} ${fromY}, 
-                     ${segment1EndX} ${fromY + (toY - fromY) * 0.2}
-                   L ${segment1EndX} ${toY - (toY - fromY) * 0.2}
-                   C ${segment1EndX} ${toY}, 
-                     ${segment2StartX} ${toY}, 
-                     ${endX - controlDistance} ${toY}
-                   C ${endX} ${toY}, ${endX} ${toY}, ${endX} ${toY}
-                   L ${toX} ${toY}`;
-      } else {
-        // Simple smooth curve for normal cases
-        const controlDistance = baseControlDistance + horizontalInfluence + verticalInfluence;
-        const fromControlX = startX + (endX > startX ? controlDistance : -controlDistance);
-        const toControlX = endX - (endX > startX ? controlDistance : -controlDistance);
-        
-        pathData = `M ${fromX} ${fromY} 
-                   L ${startX} ${fromY}
-                   C ${fromControlX} ${fromY}, ${toControlX} ${toY}, ${endX} ${toY}
-                   L ${toX} ${toY}`;
-      }
-    }
+    const distance = Math.hypot(dx, dy);
+
+    // Tangent directions at endpoints based on exact selected port sides
+    const fromDir = fromSide === 'right' ? 1 : -1;
+    const toDir = toSide === 'left' ? -1 : 1;
+
+    // Adaptive control distance
+    let control = Math.min(Math.max(60, distance * 0.35), 240);
+
+    // Encourage broader curves for same-side or backwards connections
+    const backwards = (fromSide === 'right' && toSide === 'left' && dx < 0) ||
+                      (fromSide === 'left' && toSide === 'right' && dx > 0);
+    if (fromSide === toSide) control = Math.max(control, 160);
+    if (backwards) control = Math.max(control, 200);
+
+    // Slight vertical easing to reduce flatness on steep angles
+    const vEase = Math.sign(dy) * Math.min(60, Math.abs(dy) * 0.25);
+
+    const c1x = fromX + fromDir * control;
+    const c1y = fromY + vEase * 0.3;
+    const c2x = toX + toDir * control;
+    const c2y = toY - vEase * 0.3;
+
+    const pathData = `M ${fromX} ${fromY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${toX} ${toY}`;
 
     return pathData;
   }
