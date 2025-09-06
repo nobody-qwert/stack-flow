@@ -1011,6 +1011,7 @@ class DataFlowApp {
         <div class="variables-list">
           ${node.variables.map(variable => `
             <div class="variable-item" data-variable-id="${variable.id}">
+              <button type="button" class="var-drag-handle" title="Drag to reorder" tabindex="0" aria-label="Reorder" style="width:18px;min-width:18px;display:flex;align-items:center;justify-content:center;color:#888;border:1px dashed #ddd;border-radius:4px;background:#fff;user-select:none;">≡</button>
               <div class="variable-edit-row">
                 <input type="text" class="var-name-input" value="${variable.name}" placeholder="Variable name">
                 <select class="var-type-select">
@@ -1109,6 +1110,151 @@ class DataFlowApp {
             inspectorBody.innerHTML = '<p>Select a node, variable, or edge to edit details.</p>';
           }
         }
+      });
+    }
+
+    // Reordering: pointer-based drag using the grab handle + keyboard support
+    const list = document.querySelector('.variables-list');
+    if (list) {
+      const getItems = () => Array.from(list.querySelectorAll('.variable-item'));
+
+      let drag = null;
+
+      // Delegated Alt+ArrowUp/Down keyboard reordering for any focused control within a row
+      list.addEventListener('keydown', (e) => {
+        if (!e.altKey) return;
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        const row = e.target.closest('.variable-item');
+        if (!row) return;
+        e.preventDefault();
+        const items = getItems();
+        const index = items.indexOf(row);
+        if (index === -1) return;
+        const delta = e.key === 'ArrowUp' ? -1 : 1;
+        store.moveVariable(node.id, row.dataset.variableId, index + delta);
+      });
+
+      const onMouseMove = (e) => {
+        if (!drag) return;
+        // Move ghost with cursor
+        drag.ghost.style.top = (e.clientY - drag.ghostOffsetY) + 'px';
+        drag.ghost.style.left = (e.clientX - drag.ghostOffsetX) + 'px';
+
+        // Decide placeholder position by comparing cursor Y to item midpoints
+        const items = getItems().filter(el => el !== drag.item);
+        let insertBefore = null;
+        for (const el of items) {
+          const r = el.getBoundingClientRect();
+          const midY = r.top + r.height / 2;
+          if (e.clientY < midY) {
+            insertBefore = el;
+            break;
+          }
+        }
+        if (insertBefore) {
+          list.insertBefore(drag.placeholder, insertBefore);
+        } else {
+          list.appendChild(drag.placeholder);
+        }
+      };
+
+      const endDrag = () => {
+        if (!drag) return;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', endDrag);
+
+        // Compute final target index as the placeholder's index among items
+        const siblings = Array.from(list.querySelectorAll('.variable-item, .drag-placeholder'));
+        const toIndex = siblings.indexOf(drag.placeholder);
+
+        // Cleanup visuals
+        drag.ghost.remove();
+        drag.item.classList.remove('dragging');
+        drag.item.style.visibility = '';
+
+        // Place the real item at the placeholder, then remove placeholder
+        drag.placeholder.replaceWith(drag.item);
+
+        // Commit to store
+        const variableId = drag.item.dataset.variableId;
+        if (variableId) {
+          store.moveVariable(node.id, variableId, toIndex);
+        }
+
+        drag = null;
+      };
+
+      // Attach handlers to each grab handle
+      list.querySelectorAll('.var-drag-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const item = handle.closest('.variable-item');
+          if (!item) return;
+
+          const rect = item.getBoundingClientRect();
+
+          // Floating ghost element following the cursor
+          const ghost = item.cloneNode(true);
+          ghost.style.position = 'fixed';
+          ghost.style.top = rect.top + 'px';
+          ghost.style.left = rect.left + 'px';
+          ghost.style.width = rect.width + 'px';
+          ghost.style.height = rect.height + 'px';
+          ghost.style.pointerEvents = 'none';
+          ghost.style.opacity = '0.85';
+          ghost.style.zIndex = '9999';
+          ghost.classList.add('drag-ghost');
+          document.body.appendChild(ghost);
+
+          // Placeholder occupying space in the list
+          const placeholder = document.createElement('div');
+          placeholder.className = 'drag-placeholder';
+          placeholder.style.height = rect.height + 'px';
+          item.after(placeholder);
+
+          // Hide the actual item but keep its position for replacement later
+          item.classList.add('dragging');
+          item.style.visibility = 'hidden';
+
+          drag = {
+            item,
+            ghost,
+            placeholder,
+            ghostOffsetX: e.clientX - rect.left,
+            ghostOffsetY: e.clientY - rect.top
+          };
+
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', endDrag);
+        });
+
+        // Keyboard reordering: Alt+ArrowUp / Alt+ArrowDown on handle
+        handle.addEventListener('keydown', (e) => {
+          if (!e.altKey) return;
+          if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+          e.preventDefault();
+          const items = getItems();
+          const item = handle.closest('.variable-item');
+          const index = items.indexOf(item);
+          if (index === -1) return;
+          const delta = e.key === 'ArrowUp' ? -1 : 1;
+          store.moveVariable(node.id, item.dataset.variableId, index + delta);
+        });
+      });
+
+      // Also allow Alt+ArrowUp/Down when editing fields within the row
+      list.querySelectorAll('.variable-item .var-name-input, .variable-item .var-type-select, .variable-item .var-io-select').forEach(el => {
+        el.addEventListener('keydown', (e) => {
+          if (!e.altKey) return;
+          if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+          e.preventDefault();
+          const item = e.target.closest('.variable-item');
+          const items = getItems();
+          const index = items.indexOf(item);
+          const delta = e.key === 'ArrowUp' ? -1 : 1;
+          store.moveVariable(node.id, item.dataset.variableId, index + delta);
+        });
       });
     }
   }

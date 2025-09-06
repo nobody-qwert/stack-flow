@@ -189,6 +189,35 @@ class Store {
     eventBus.emit(EVENTS.VARIABLE_DELETE, { variable, nodeId, connectedEdges });
   }
 
+  // Variable reorder operation
+  moveVariable(nodeId, variableId, toIndex) {
+    const node = this.getNodeById(nodeId);
+    if (!node) return;
+
+    const fromIndex = node.variables.findIndex(v => v.id === variableId);
+    if (fromIndex === -1) return;
+
+    const maxIndex = node.variables.length - 1;
+    let target = Math.max(0, Math.min(maxIndex, toIndex));
+    if (target === fromIndex) return;
+
+    this.setState(state => ({
+      ...state,
+      diagram: {
+        ...state.diagram,
+        nodes: state.diagram.nodes.map(n => {
+          if (n.id !== nodeId) return n;
+          const vars = [...n.variables];
+          const [moved] = vars.splice(fromIndex, 1);
+          vars.splice(target, 0, moved);
+          return { ...n, variables: vars };
+        })
+      }
+    }));
+
+    eventBus.emit(EVENTS.VARIABLE_REORDER, { nodeId, variableId, fromIndex, toIndex: target });
+  }
+
   // Edge operations
   addEdge(edge) {
     this.setState(state => ({

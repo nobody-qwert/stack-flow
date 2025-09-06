@@ -470,6 +470,9 @@ input:focus, textarea:focus, select:focus {
 }
 
 .variable-item {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
   padding: 8px;
   border-bottom: 1px solid #f0f0f0;
   font-size: 12px;
@@ -481,6 +484,36 @@ input:focus, textarea:focus, select:focus {
 
 .variable-item.selected {
   background: #e3f2fd;
+}
+
+/* Drag-reorder affordances for variables in Inspector */
+.var-drag-handle {
+  width: 18px;
+  min-width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  cursor: grab;
+  user-select: none;
+}
+.var-drag-handle:active { cursor: grabbing; }
+.variable-item:hover .var-drag-handle { color: #555; }
+
+.variable-item.dragging { opacity: 0.6; }
+
+.drag-ghost {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.drag-placeholder {
+  border: 2px dashed #cfd3d7;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin: 4px 0;
 }
 
 .variable-controls {

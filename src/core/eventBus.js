@@ -114,6 +114,7 @@ export const EVENTS = {
   VARIABLE_ADD: 'variable:add',
   VARIABLE_UPDATE: 'variable:update',
   VARIABLE_DELETE: 'variable:delete',
+  VARIABLE_REORDER: 'variable:reorder',
   VARIABLE_SELECT: 'variable:select',
   VARIABLE_TOGGLE_SAMPLE: 'variable:toggle_sample',
   
