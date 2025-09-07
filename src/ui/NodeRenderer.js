@@ -25,6 +25,7 @@ export class NodeRenderer {
 
   createNodeElement(node, state) {
     const isSelected = state.selection.type === 'node' && state.selection.ids.includes(node.id);
+    console.log(`Creating node element: id="${node.id}", type="${node.type}", title="${node.title}", isSelected=${isSelected}`);
     
     const element = document.createElement('div');
     element.className = `node ${node.type} ${isSelected ? 'selected' : ''}`;
@@ -45,9 +46,24 @@ export class NodeRenderer {
     header.appendChild(titleSpan);
     // Prevent dragging when interacting with the title text and ensure selection for editing
     titleSpan.addEventListener('mousedown', (e) => { e.stopPropagation(); });
-    titleSpan.addEventListener('click', (e) => {
+    titleSpan.addEventListener('click', function(e) {
       e.stopPropagation();
-      store.setSelection('node', node.id);
+      const nodeEl = this.closest('.node');
+      const currentNodeId = nodeEl ? nodeEl.dataset.nodeId : null;
+      console.log(`Title clicked: nodeId="${currentNodeId}"`);
+      if (currentNodeId) {
+        store.setSelection('node', currentNodeId);
+      }
+    });
+    // Add click handler to header for selection (including empty areas)
+    header.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const nodeEl = this.closest('.node');
+      const currentNodeId = nodeEl ? nodeEl.dataset.nodeId : null;
+      console.log(`Header clicked: nodeId="${currentNodeId}"`);
+      if (currentNodeId) {
+        store.setSelection('node', currentNodeId);
+      }
     });
     element.appendChild(header);
     
@@ -77,11 +93,38 @@ export class NodeRenderer {
     // Make draggable
     this.makeNodeDraggable(element, node);
     
-    // Click handler for selection
-    element.addEventListener('click', (e) => {
+    // Add click handler to body for selection
+    body.addEventListener('click', function(e) {
       e.stopPropagation();
-      console.log('Node clicked, setting selection to:', node.id);
-      store.setSelection('node', node.id);
+      const nodeEl = this.closest('.node');
+      const currentNodeId = nodeEl ? nodeEl.dataset.nodeId : null;
+      console.log(`Body clicked: nodeId="${currentNodeId}"`);
+      if (currentNodeId) {
+        store.setSelection('node', currentNodeId);
+      }
+    });
+    
+    // Click handler for selection on the main element
+    element.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const currentNodeId = this.dataset.nodeId;
+      console.log(`Node element clicked: nodeId="${currentNodeId}", this.className="${this.className}"`);
+      console.log('Element dataset:', this.dataset);
+      console.log('Element id attribute:', this.getAttribute('id'));
+      if (currentNodeId) {
+        store.setSelection('node', currentNodeId);
+      }
+    });
+    
+    // Also select on mousedown anywhere within the node. This ensures the inspector
+    // updates even when subsequent drag/resize logic prevents the click event.
+    element.addEventListener('mousedown', function(e) {
+      // Skip when starting a port connection; that logic handles selection separately.
+      if (e.target.closest('.variable-port')) return;
+      const currentNodeId = this.dataset.nodeId;
+      if (currentNodeId) {
+        try { store.setSelection('node', currentNodeId); } catch (_) {}
+      }
     });
     
     return element;
@@ -180,11 +223,24 @@ export class NodeRenderer {
     resizeHandle.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation(); // avoid starting node drag/select
+      // Always select the node when interacting with the resize handle
+      try { store.setSelection('node', node.id); } catch (_) {}
       resizing = true;
       startX = e.clientX;
       startW = element.getBoundingClientRect().width;
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // Add click handler to resize handle for node selection
+    resizeHandle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const nodeEl = this.closest('.node');
+      const currentNodeId = nodeEl ? nodeEl.dataset.nodeId : null;
+      console.log(`Resize handle clicked: nodeId="${currentNodeId}"`);
+      if (currentNodeId) {
+        store.setSelection('node', currentNodeId);
+      }
     });
   }
 
@@ -265,8 +321,11 @@ export class NodeRenderer {
     };
     
     header.addEventListener('mousedown', (e) => {
+      // Always select this node on any header press (including empty area)
+      try { store.setSelection('node', node.id); } catch (_) {}
       // If the user begins interaction on the title text, treat it as edit/select, not drag
       if (e.target.closest('.node-title-text')) {
+        // Let title editing/click behavior handle the rest
         return;
       }
       handleMouseDown(e);

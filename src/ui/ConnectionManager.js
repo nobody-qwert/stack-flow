@@ -16,10 +16,15 @@ export class ConnectionManager {
     let isConnecting = false;
     let connectionLine = null;
     let hotPortEl = null; // preview target port while connecting
+    let startClickX = 0;   // track start position to distinguish click vs drag
+    let startClickY = 0;
     
     const handleMouseDown = (e) => {
       e.preventDefault();
       e.stopPropagation();
+      // record click start for click vs drag detection
+      startClickX = e.clientX;
+      startClickY = e.clientY;
       
       isConnecting = true;
       this.isConnecting = true;
@@ -159,6 +164,8 @@ export class ConnectionManager {
       document.querySelectorAll('.variable-port.eligible, .variable-port.ineligible').forEach(p => p.classList.remove('eligible','ineligible'));
       document.querySelectorAll('.variable.eligible-target').forEach(el => el.classList.remove('eligible-target'));
       
+      let didCreateConnection = false;
+
       if (targetPort && targetPort !== portElement) {
         const targetVariableId = targetPort.dataset.variableId;
         const targetNodeElement = targetPort.closest('.node');
@@ -175,6 +182,17 @@ export class ConnectionManager {
             this.connectionState.fromSide,
             targetPort.dataset.portSide
           );
+          didCreateConnection = true;
+        }
+      }
+
+      // If it was just a click on a port (no drag and no connection), select the node
+      const moved = Math.hypot(e.clientX - startClickX, e.clientY - startClickY) > 4;
+      if (!didCreateConnection && !moved) {
+        const nodeEl = portElement.closest('.node');
+        const nodeId = nodeEl?.dataset.nodeId;
+        if (nodeId) {
+          store.setSelection('node', nodeId);
         }
       }
       

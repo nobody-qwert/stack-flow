@@ -64,7 +64,8 @@ class DataFlowApp {
     // Canvas click for deselection - delegate to canvas manager
     const canvas = document.getElementById('canvas');
     canvas.addEventListener('click', (e) => {
-      if (e.target === canvas || e.target.closest('.content')) {
+      // Only clear selection if clicking directly on canvas or content, not on nodes or their children
+      if ((e.target === canvas || e.target.id === 'content') && !e.target.closest('.node')) {
         store.clearSelection();
       }
     });
