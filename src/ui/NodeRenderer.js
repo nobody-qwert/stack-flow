@@ -116,16 +116,6 @@ export class NodeRenderer {
       }
     });
     
-    // Also select on mousedown anywhere within the node. This ensures the inspector
-    // updates even when subsequent drag/resize logic prevents the click event.
-    element.addEventListener('mousedown', function(e) {
-      // Skip when starting a port connection; that logic handles selection separately.
-      if (e.target.closest('.variable-port')) return;
-      const currentNodeId = this.dataset.nodeId;
-      if (currentNodeId) {
-        try { store.setSelection('node', currentNodeId); } catch (_) {}
-      }
-    });
     
     return element;
   }
@@ -223,8 +213,7 @@ export class NodeRenderer {
     resizeHandle.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation(); // avoid starting node drag/select
-      // Always select the node when interacting with the resize handle
-      try { store.setSelection('node', node.id); } catch (_) {}
+      // Do not select on resize mousedown to avoid re-render during resize drag
       resizing = true;
       startX = e.clientX;
       startW = element.getBoundingClientRect().width;
@@ -321,8 +310,7 @@ export class NodeRenderer {
     };
     
     header.addEventListener('mousedown', (e) => {
-      // Always select this node on any header press (including empty area)
-      try { store.setSelection('node', node.id); } catch (_) {}
+      // Do not select on header mousedown to avoid re-render during drag start
       // If the user begins interaction on the title text, treat it as edit/select, not drag
       if (e.target.closest('.node-title-text')) {
         // Let title editing/click behavior handle the rest

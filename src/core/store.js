@@ -268,9 +268,19 @@ class Store {
 
   // Selection operations
   setSelection(type, ids) {
+    const newIds = Array.isArray(ids) ? ids : [ids];
+    const cur = this.state.selection;
+    const sameType = cur.type === type;
+    const sameLength = cur.ids.length === newIds.length;
+    const sameIds = sameLength && cur.ids.every((id, i) => id === newIds[i]);
+    if (sameType && sameIds) {
+      // No change; avoid triggering subscribers/rerender
+      return;
+    }
+
     this.setState(state => ({
       ...state,
-      selection: { type, ids: Array.isArray(ids) ? ids : [ids] }
+      selection: { type, ids: newIds }
     }));
     eventBus.emit(EVENTS.SELECTION_CHANGE, { selection: this.state.selection });
   }
