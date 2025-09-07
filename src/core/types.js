@@ -130,6 +130,7 @@ export const createEdge = (from, to) => ({
 
 export const createDiagram = () => ({
   version: '0.1',
+  title: 'Untitled diagram',
   nodes: [],
   edges: []
 });

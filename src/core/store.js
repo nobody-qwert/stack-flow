@@ -318,6 +318,13 @@ class Store {
     this.setShowTypes(!this.state.ui.showTypes);
   }
 
+  setDiagramTitle(title) {
+    this.setState(state => ({
+      ...state,
+      diagram: { ...state.diagram, title: title || 'Untitled diagram' }
+    }));
+  }
+
   setLineageHighlight(ids) {
     this.setState(state => ({
       ...state,
@@ -338,7 +345,10 @@ class Store {
   loadDiagram(diagram) {
     this.setState(state => ({
       ...state,
-      diagram,
+      diagram: {
+        ...diagram,
+        title: diagram.title || 'Untitled diagram'
+      },
       selection: { type: null, ids: [] },
       ui: {
         ...state.ui,

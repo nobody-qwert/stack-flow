@@ -108,11 +108,15 @@ class DataFlowApp {
     
     
     document.getElementById('btnExport').addEventListener('click', () => {
-      downloadDiagram();
+      const state = store.getState();
+      const filename = this.getSafeFilename(state.diagram.title) + '.json';
+      downloadDiagram(filename);
     });
     
     document.getElementById('btnExportPng').addEventListener('click', () => {
-      exportViewportPng();
+      const state = store.getState();
+      const filename = this.getSafeFilename(state.diagram.title) + '.png';
+      exportViewportPng(filename);
     });
 
     document.getElementById('btnShare').addEventListener('click', async () => {
@@ -139,6 +143,22 @@ class DataFlowApp {
     if (chkShowTypes) {
       chkShowTypes.addEventListener('change', () => {
         store.setShowTypes(chkShowTypes.checked);
+      });
+    }
+
+    // Diagram title input
+    const titleInput = document.getElementById('diagramTitle');
+    if (titleInput) {
+      titleInput.addEventListener('input', () => {
+        store.setDiagramTitle(titleInput.value);
+      });
+      titleInput.addEventListener('blur', () => {
+        store.setDiagramTitle(titleInput.value);
+      });
+      titleInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          titleInput.blur();
+        }
       });
     }
   }
@@ -244,6 +264,24 @@ class DataFlowApp {
     // Sync inspector toggle from state
     const chk = document.getElementById('toggleShowTypes');
     if (chk) chk.checked = !!state.ui.showTypes;
+
+    // Sync diagram title from state
+    const titleInput = document.getElementById('diagramTitle');
+    if (titleInput && titleInput.value !== state.diagram.title) {
+      titleInput.value = state.diagram.title || '';
+    }
+
+    // Update document title
+    document.title = `${state.diagram.title || 'Untitled diagram'} - Data Flow Designer`;
+  }
+
+  // Helper function to create safe filename from title
+  getSafeFilename(title) {
+    return (title || 'diagram')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'diagram';
   }
 }
 

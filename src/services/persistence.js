@@ -13,6 +13,7 @@ export function exportDiagram() {
   const state = store.getState();
   const diagram = {
     version: state.diagram.version,
+    title: state.diagram.title,
     nodes: state.diagram.nodes,
     edges: state.diagram.edges,
     metadata: {
@@ -47,6 +48,7 @@ export function importDiagram(jsonString) {
     // Load into store
     store.loadDiagram({
       version: diagram.version || '0.1',
+      title: diagram.title || 'Untitled diagram',
       nodes: diagram.nodes,
       edges: diagram.edges
     });
