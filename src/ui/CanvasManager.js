@@ -70,7 +70,6 @@ export class CanvasManager {
         this.isPanning = true;
         this.startX = e.clientX - this.currentX;
         this.startY = e.clientY - this.currentY;
-        this.canvas.style.cursor = 'grabbing';
       }
     });
     
@@ -84,7 +83,6 @@ export class CanvasManager {
     
     document.addEventListener('mouseup', () => {
       this.isPanning = false;
-      this.canvas.style.cursor = 'grab';
     });
   }
 
