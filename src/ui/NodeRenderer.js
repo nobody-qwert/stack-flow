@@ -118,10 +118,12 @@ export class NodeRenderer {
     element.appendChild(name);
     
     // Type badge
-    const type = document.createElement('div');
-    type.className = 'variable-type';
-    type.textContent = variable.dataType;
-    element.appendChild(type);
+    if (state.ui.showTypes) {
+      const type = document.createElement('div');
+      type.className = 'variable-type';
+      type.textContent = variable.dataType;
+      element.appendChild(type);
+    }
     
     // Sample value toggle
     if (variable.sampleValue !== undefined) {

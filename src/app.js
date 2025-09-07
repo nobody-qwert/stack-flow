@@ -133,6 +133,14 @@ class DataFlowApp {
     document.getElementById('btnNewDiagram').addEventListener('click', () => {
       this.newDiagram();
     });
+
+    // Inspector footer: Show/Hide variable types
+    const chkShowTypes = document.getElementById('toggleShowTypes');
+    if (chkShowTypes) {
+      chkShowTypes.addEventListener('change', () => {
+        store.setShowTypes(chkShowTypes.checked);
+      });
+    }
   }
 
   createNode(type) {
@@ -232,6 +240,10 @@ class DataFlowApp {
     this.nodeRenderer.renderNodes(state);
     this.edgeRenderer.renderEdges(state);
     this.inspector.renderInspector(state);
+
+    // Sync inspector toggle from state
+    const chk = document.getElementById('toggleShowTypes');
+    if (chk) chk.checked = !!state.ui.showTypes;
   }
 }
 

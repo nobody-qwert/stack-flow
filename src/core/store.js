@@ -16,7 +16,8 @@ class Store {
       ui: {
         showSamples: new Set(), // Variable IDs with visible samples
         highlightedLineage: new Set(), // Node/Edge IDs in lineage highlight
-        canvasTransform: { x: 0, y: 0, scale: 1 }
+        canvasTransform: { x: 0, y: 0, scale: 1 },
+        showTypes: true
       }
     };
     
@@ -304,6 +305,17 @@ class Store {
       ...state,
       ui: { ...state.ui, canvasTransform: { ...state.ui.canvasTransform, ...transform } }
     }));
+  }
+
+  setShowTypes(value) {
+    this.setState(state => ({
+      ...state,
+      ui: { ...state.ui, showTypes: !!value }
+    }));
+  }
+
+  toggleShowTypes() {
+    this.setShowTypes(!this.state.ui.showTypes);
   }
 
   setLineageHighlight(ids) {

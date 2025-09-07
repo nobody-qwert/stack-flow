@@ -791,3 +791,18 @@ input:focus, textarea:focus, select:focus {
 
 /* Bleed the variables list to panel edges to eliminate side gaps */
 .inspector .variables-list { margin-left: 0; margin-right: 0; }
+
+/* Inspector footer */
+.inspector-footer {
+  flex: 0 0 auto;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f8f8;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.inspector-toggle input { vertical-align: middle; }
+.inspector-toggle span { margin-left: 6px; color: #555; }
