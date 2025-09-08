@@ -162,6 +162,39 @@ class DataFlowApp {
         }
       });
     }
+
+    // Inspector toggle handle (slide in/out)
+    const inspector = document.getElementById('inspector');
+    let handle = document.getElementById('inspectorToggle');
+    if (!handle) {
+      handle = document.createElement('button');
+      handle.id = 'inspectorToggle';
+      handle.className = 'inspector-handle';
+      handle.type = 'button';
+      handle.setAttribute('aria-label', 'Toggle inspector');
+      handle.setAttribute('aria-controls', 'inspector');
+      // Place as child of .main so it's positioned relative to the layout
+      const mainEl = document.querySelector('.main');
+      if (mainEl) mainEl.appendChild(handle);
+    }
+
+    const applyInspectorCollapsed = (collapsed) => {
+      if (!inspector || !handle) return;
+      inspector.classList.toggle('collapsed', collapsed);
+      handle.setAttribute('aria-expanded', String(!collapsed));
+      // Chevron shows the action direction
+      handle.textContent = collapsed ? '◀' : '▶';
+      // Keep the handle anchored to the inspector edge
+      handle.style.right = collapsed ? '0px' : 'var(--inspector-width)';
+    };
+
+    // Initialize (expanded by default)
+    applyInspectorCollapsed(false);
+
+    handle.addEventListener('click', () => {
+      const collapsed = !inspector.classList.contains('collapsed');
+      applyInspectorCollapsed(collapsed);
+    });
   }
 
   createNode(type) {
