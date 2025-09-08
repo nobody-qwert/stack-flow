@@ -219,6 +219,23 @@ class Store {
     eventBus.emit(EVENTS.VARIABLE_REORDER, { nodeId, variableId, fromIndex, toIndex: target });
   }
 
+  // Node z-order operation: move nodes to end to bring to front
+  bringNodeToFront(ids) {
+    const idsArr = Array.isArray(ids) ? ids : [ids];
+    if (!idsArr.length) return;
+    this.setState(state => {
+      const set = new Set(idsArr);
+      const nodes = state.diagram.nodes;
+      const others = nodes.filter(n => !set.has(n.id));
+      const selected = nodes.filter(n => set.has(n.id));
+      if (selected.length === 0) return state;
+      return {
+        ...state,
+        diagram: { ...state.diagram, nodes: [...others, ...selected] }
+      };
+    });
+  }
+
   // Edge operations
   addEdge(edge) {
     this.setState(state => ({
@@ -273,15 +290,30 @@ class Store {
     const sameType = cur.type === type;
     const sameLength = cur.ids.length === newIds.length;
     const sameIds = sameLength && cur.ids.every((id, i) => id === newIds[i]);
+
+    const shouldBringFront = type === 'node' && newIds.length > 0;
+
     if (sameType && sameIds) {
-      // No change; avoid triggering subscribers/rerender
+      // No selection change; optionally bring node(s) to front to persist z-order
+      if (shouldBringFront) {
+        this.bringNodeToFront(newIds);
+      }
       return;
     }
 
-    this.setState(state => ({
-      ...state,
-      selection: { type, ids: newIds }
-    }));
+    this.setState(state => {
+      const next = {
+        ...state,
+        selection: { type, ids: newIds }
+      };
+      if (shouldBringFront) {
+        const set = new Set(newIds);
+        const others = state.diagram.nodes.filter(n => !set.has(n.id));
+        const selected = state.diagram.nodes.filter(n => set.has(n.id));
+        next.diagram = { ...state.diagram, nodes: [...others, ...selected] };
+      }
+      return next;
+    });
     eventBus.emit(EVENTS.SELECTION_CHANGE, { selection: this.state.selection });
   }
 

@@ -303,6 +303,9 @@ export class NodeRenderer {
       store.updateNode(node.id, {
         position: { x: newX, y: newY }
       });
+
+      // Persist z-order so the node stays on top after drag
+      store.bringNodeToFront(node.id);
       
       // Remove event listeners to prevent memory leaks
       document.removeEventListener('mousemove', handleMouseMove);
