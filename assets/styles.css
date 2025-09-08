@@ -692,7 +692,9 @@ input:focus, textarea:focus, select:focus {
 }
 
 .edge-arrow {
-  fill: currentColor;
+  /* Match the edge stroke color (SVG2 context paint) */
+  fill: context-stroke;
+  stroke: context-stroke;
 }
 
 /* Dialog styles */
