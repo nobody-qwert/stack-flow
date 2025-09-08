@@ -537,14 +537,26 @@ input:focus, textarea:focus, select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
+  color: #727272 !important;
   cursor: grab;
   user-select: none;
   padding: 0;
   margin-right: 2px;
+  opacity: 1 !important;
+  border: 1px solid #888 !important;
+  background: #f8f9fa !important;
+  border-radius: 2px !important;
 }
 .var-drag-handle:active { cursor: grabbing; }
-.variable-item:hover .var-drag-handle { color: #555; }
+.var-drag-handle:hover { 
+  color: #646464 !important; 
+  border-color: #555 !important;
+  background: #e9ecef !important;
+}
+.variable-item:hover .var-drag-handle { 
+  color: #555 !important; 
+  border-color: #333 !important;
+}
 
 .variable-item.dragging { opacity: 0.6; }
 
