@@ -45,7 +45,6 @@ export class NodeRenderer {
     titleSpan.textContent = node.title;
     header.appendChild(titleSpan);
     // Prevent dragging when interacting with the title text and ensure selection for editing
-    titleSpan.addEventListener('mousedown', (e) => { e.stopPropagation(); });
     titleSpan.addEventListener('click', function(e) {
       e.stopPropagation();
       const nodeEl = this.closest('.node');
@@ -314,11 +313,6 @@ export class NodeRenderer {
     
     header.addEventListener('mousedown', (e) => {
       // Do not select on header mousedown to avoid re-render during drag start
-      // If the user begins interaction on the title text, treat it as edit/select, not drag
-      if (e.target.closest('.node-title-text')) {
-        // Let title editing/click behavior handle the rest
-        return;
-      }
       handleMouseDown(e);
       // Add listeners only when dragging starts
       document.addEventListener('mousemove', handleMouseMove);
