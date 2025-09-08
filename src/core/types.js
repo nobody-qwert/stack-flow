@@ -20,7 +20,7 @@
 /**
  * @typedef {Object} Node
  * @property {string} id - Unique identifier
- * @property {'api'|'table'|'gui'} type - Node type
+ * @property {'api'|'table'|'module'|'gui'} type - Node type
  * @property {string} title - Display title
  * @property {Position} position - Canvas position
  * @property {Variable[]} variables - Array of variables/slots
@@ -68,7 +68,8 @@
 export const NODE_TYPES = {
   API: 'api',
   TABLE: 'table',
-  GUI: 'gui'
+  MODULE: 'module',
+  GUI: 'gui' // deprecated alias
 };
 
 
@@ -145,6 +146,7 @@ export const getNodeTypeColor = (type) => {
   switch (type) {
     case NODE_TYPES.API: return '#28a745';
     case NODE_TYPES.TABLE: return '#dc3545';
+    case NODE_TYPES.MODULE: return '#ffc107';
     case NODE_TYPES.GUI: return '#ffc107';
     default: return '#6c757d';
   }
@@ -164,7 +166,9 @@ export const createTableMetadata = (schema = 'public', table = '') => ({
   pk: []
 });
 
-export const createGuiMetadata = (route = '', framework = '') => ({
+export const createModuleMetadata = (route = '', framework = '') => ({
   route,
   framework
 });
+
+export const createGuiMetadata = createModuleMetadata;

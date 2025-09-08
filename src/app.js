@@ -103,8 +103,8 @@ class DataFlowApp {
       this.createNode(NODE_TYPES.TABLE);
     });
     
-    document.getElementById('btnNewGui').addEventListener('click', () => {
-      this.createNode(NODE_TYPES.GUI);
+    document.getElementById('btnNewModule').addEventListener('click', () => {
+      this.createNode(NODE_TYPES.MODULE);
     });
     
     
@@ -211,8 +211,9 @@ class DataFlowApp {
         title = 'public.table';
         metadata = { schema: 'public', table: 'table', pk: [] };
         break;
-      case NODE_TYPES.GUI:
-        title = 'View';
+      case NODE_TYPES.MODULE:
+      case NODE_TYPES.GUI: // back-compat alias
+        title = 'Module';
         metadata = { route: '', framework: '' };
         break;
     }

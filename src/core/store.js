@@ -2,7 +2,7 @@
  * @fileoverview Central state store with immutable-style updates and selectors
  */
 
-import { createDiagram } from './types.js';
+import { createDiagram, NODE_TYPES } from './types.js';
 import { eventBus, EVENTS } from './eventBus.js';
 
 class Store {
@@ -385,12 +385,18 @@ class Store {
 
   // Diagram operations
   loadDiagram(diagram) {
+    // Migrate legacy node types (e.g., 'gui' -> 'module') for back-compat
+    const migrated = {
+      ...diagram,
+      title: diagram.title || 'Untitled diagram',
+      nodes: (diagram.nodes || []).map(n =>
+        n && n.type === NODE_TYPES.GUI ? { ...n, type: NODE_TYPES.MODULE } : n
+      )
+    };
+
     this.setState(state => ({
       ...state,
-      diagram: {
-        ...diagram,
-        title: diagram.title || 'Untitled diagram'
-      },
+      diagram: migrated,
       selection: { type: null, ids: [] },
       ui: {
         ...state.ui,
@@ -398,7 +404,7 @@ class Store {
         highlightedLineage: new Set()
       }
     }));
-    eventBus.emit(EVENTS.DIAGRAM_LOAD, { diagram });
+    eventBus.emit(EVENTS.DIAGRAM_LOAD, { diagram: migrated });
   }
 
   // Selectors (read-only access to state)

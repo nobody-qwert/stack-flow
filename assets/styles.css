@@ -252,7 +252,8 @@ input:focus, textarea:focus, select:focus {
   border-radius: 8px;
 }
 
-.node.gui {
+.node.gui,
+.node.module {
   border-color: #bdbdbd;
 }
 
@@ -278,7 +279,8 @@ input:focus, textarea:focus, select:focus {
   border-radius: 6px 6px 0 0;
 }
 
-.node.gui .node-header {
+.node.gui .node-header,
+.node.module .node-header {
   background: #f2f2f2;
   color: #333;
 }
