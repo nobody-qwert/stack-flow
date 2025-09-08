@@ -78,12 +78,21 @@ const pathData = this.generateEdgePath(fromX, fromY, toX, toY, edge, fromVariabl
       store.setSelection('edge', edge.id);
     });
     
-    // Add selection styling
-    if (state.selection.type === 'edge' && state.selection.ids.includes(edge.id)) {
-      visiblePath.classList.add('selected');
-    }
-    
-    return g;
+  // Add selection styling
+  if (state.selection.type === 'edge' && state.selection.ids.includes(edge.id)) {
+    visiblePath.classList.add('selected');
+  }
+
+  // Hover highlight styling (used as reference for variable-related highlighting)
+  // Attach to hitPath since it owns pointer events
+  hitPath.addEventListener('mouseenter', () => {
+    visiblePath.classList.add('hover');
+  });
+  hitPath.addEventListener('mouseleave', () => {
+    visiblePath.classList.remove('hover');
+  });
+  
+  return g;
   }
 
 calculateEdgePositions(edge, fromVariable, toVariable, fromNode, toNode) {

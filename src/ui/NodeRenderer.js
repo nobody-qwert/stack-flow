@@ -74,7 +74,7 @@ export class NodeRenderer {
     const group = document.createElement('div');
     group.className = 'variable-group';
     node.variables.forEach(variable => {
-      const varElement = this.createVariableElement(variable, state);
+      const varElement = this.createVariableElement(node, variable, state);
       group.appendChild(varElement);
     });
     body.appendChild(group);
@@ -119,7 +119,7 @@ export class NodeRenderer {
     return element;
   }
 
-  createVariableElement(variable, state) {
+  createVariableElement(node, variable, state) {
     const element = document.createElement('div');
     element.className = 'variable';
     element.dataset.variableId = variable.id;
@@ -178,6 +178,56 @@ export class NodeRenderer {
         element.appendChild(sample);
       }
     }
+
+    // Transient hover highlight: directly connected variables and edges
+    const applyRelatedHighlight = (on) => {
+      try {
+        // Highlight this variable
+        if (on) {
+          element.classList.add('related');
+        } else {
+          element.classList.remove('related');
+        }
+
+        // Compute directly connected edges and counterpart variable IDs
+        const edges = store.getEdgesForVariable(node.id, variable.id) || [];
+        const relatedVarIds = new Set();
+        const edgeIds = [];
+
+        edges.forEach(e => {
+          edgeIds.push(e.id);
+          const otherVarId =
+            (e.from.nodeId === node.id && e.from.portId === variable.id) ? e.to.portId :
+            (e.to.nodeId === node.id && e.to.portId === variable.id) ? e.from.portId :
+            null;
+          if (otherVarId) relatedVarIds.add(otherVarId);
+        });
+
+        // Toggle class on related variables
+        relatedVarIds.forEach(vId => {
+          const vEl = document.querySelector(`.variable[data-variable-id="${vId}"]`);
+          if (vEl) {
+            if (on) vEl.classList.add('related');
+            else vEl.classList.remove('related');
+          }
+        });
+
+        // Toggle class on belonging edges
+        edgeIds.forEach(eid => {
+          const g = document.querySelector(`.edge-group[data-edge-id="${eid}"]`);
+          if (g) {
+            if (on) g.classList.add('related');
+            else g.classList.remove('related');
+          }
+        });
+      } catch (err) {
+        // Avoid breaking interactions on any error
+        console.error('applyRelatedHighlight error:', err);
+      }
+    };
+
+    element.addEventListener('mouseenter', () => applyRelatedHighlight(true));
+    element.addEventListener('mouseleave', () => applyRelatedHighlight(false));
     
     return element;
   }
