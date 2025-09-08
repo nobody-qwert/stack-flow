@@ -886,8 +886,26 @@ input:focus, textarea:focus, select:focus {
   gap: 8px;
   font-size: 12px;
 }
+.inspector-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
 .inspector-toggle input { vertical-align: middle; }
-.inspector-toggle span { margin-left: 6px; color: #555; }
+.inspector-toggle span { color: #555; }
+
+/* Ensure the in-panel toggle label renders like the footer one */
+.form-group label.inspector-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal; /* footer label is not bold */
+  margin-bottom: 0;    /* avoid extra spacing under the row */
+  white-space: nowrap; /* prevent text wrapping */
+  justify-content: flex-start; /* align to left like other form elements */
+}
 
 /* Related highlights: variable-to-variable and their connecting edges */
 .variable.related:not(.custom-bg) {

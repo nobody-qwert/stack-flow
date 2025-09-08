@@ -25,6 +25,7 @@
  * @property {Position} position - Canvas position
  * @property {Variable[]} variables - Array of variables/slots
  * @property {Object} metadata - Type-specific metadata
+ * @property {boolean|null} [showVariableTypes] - Per-node type visibility: null=follow global, true=always show, false=always hide
  */
 
 /**
@@ -118,7 +119,8 @@ export const createNode = (type, title, position = createPosition()) => ({
   title,
   position,
   variables: [],
-  metadata: {}
+  metadata: {},
+  showVariableTypes: null // Default: follow global setting
 });
 
 export const createEdge = (from, to) => ({
@@ -172,3 +174,11 @@ export const createModuleMetadata = (route = '', framework = '') => ({
 });
 
 export const createGuiMetadata = createModuleMetadata;
+
+// Helper function to determine if variable types should be shown for a node
+export const shouldShowTypesForNode = (node, globalShowTypes) => {
+  if (node.showVariableTypes === null || node.showVariableTypes === undefined) {
+    return globalShowTypes; // Follow global setting
+  }
+  return node.showVariableTypes; // Use node-specific setting
+};

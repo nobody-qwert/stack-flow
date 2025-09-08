@@ -4,7 +4,7 @@
 
 import { store } from '../core/store.js';
 import { generateVariableId } from '../core/id.js';
-import { createVariable } from '../core/types.js';
+import { createVariable, shouldShowTypesForNode } from '../core/types.js';
 
 export class NodeRenderer {
   constructor(canvasManager, connectionManager) {
@@ -149,8 +149,8 @@ export class NodeRenderer {
     name.textContent = variable.name;
     element.appendChild(name);
     
-    // Type badge
-    if (state.ui.showTypes) {
+    // Type badge - use per-node logic
+    if (shouldShowTypesForNode(node, state.ui.showTypes)) {
       const type = document.createElement('div');
       type.className = 'variable-type';
       type.textContent = variable.dataType;

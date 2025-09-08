@@ -360,6 +360,23 @@ class Store {
     this.setShowTypes(!this.state.ui.showTypes);
   }
 
+  setNodeShowTypes(nodeId, value) {
+    this.setState(state => ({
+      ...state,
+      diagram: {
+        ...state.diagram,
+        nodes: state.diagram.nodes.map(node =>
+          node.id === nodeId ? { ...node, showVariableTypes: value } : node
+        )
+      }
+    }));
+    
+    const node = this.getNodeById(nodeId);
+    if (node) {
+      eventBus.emit(EVENTS.NODE_UPDATE, { node, updates: { showVariableTypes: value } });
+    }
+  }
+
   setDiagramTitle(title) {
     this.setState(state => ({
       ...state,

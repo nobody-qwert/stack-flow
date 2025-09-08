@@ -48,6 +48,11 @@ export class Inspector {
         </div>
       </div>
       
+      <label class="inspector-toggle" style="margin-bottom: 12px;">
+        <input type="checkbox" id="nodeHideTypes" ${node.showVariableTypes === false ? 'checked' : ''} />
+        <span>Always hide variable types</span>
+      </label>
+      
       <div class="form-group">
         <label>Variables:</label>
         <div class="variable-controls">
@@ -87,6 +92,16 @@ export class Inspector {
     titleInput.addEventListener('change', () => {
       store.updateNode(node.id, { title: titleInput.value });
     });
+    
+    // Node "Always hide variable types" checkbox
+    const nodeHideTypesChk = document.getElementById('nodeHideTypes');
+    if (nodeHideTypesChk) {
+      nodeHideTypesChk.addEventListener('change', () => {
+        // checked => always hide (override), unchecked => follow global
+        const value = nodeHideTypesChk.checked ? false : null;
+        store.setNodeShowTypes(node.id, value);
+      });
+    }
     
     // Add variable button
     const addVariableBtn = document.getElementById('addVariable');
