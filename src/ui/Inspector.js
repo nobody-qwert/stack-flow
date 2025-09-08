@@ -50,6 +50,9 @@ export class Inspector {
       
       <div class="form-group">
         <label>Variables:</label>
+        <div class="variable-controls">
+          <button id="addVariable">Add Variable</button>
+        </div>
         <div class="variables-list">
           ${node.variables.map(variable => `
             <div class="variable-item" data-variable-id="${variable.id}">
@@ -71,10 +74,7 @@ export class Inspector {
               ${variable.description ? `<div class="variable-description"><small>${variable.description}</small></div>` : ''}
             </div>
           `).join('')}
-        </div>
-        <div class="variable-controls">
-          <button id="addVariable">Add Variable</button>
-        </div>
+        </div>        
       </div>
     `;
   }
