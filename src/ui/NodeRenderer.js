@@ -241,7 +241,8 @@ export class NodeRenderer {
 
     const onMouseMove = (e) => {
       if (!resizing) return;
-      const delta = e.clientX - startX;
+      const scale = this.canvasManager?.scale || 1;
+      const delta = (e.clientX - startX) / scale;
       let w = startW + delta;
       w = Math.max(200, Math.min(1000, w)); // clamp width
       w = snap(w);
@@ -265,7 +266,8 @@ export class NodeRenderer {
       // Do not select on resize mousedown to avoid re-render during resize drag
       resizing = true;
       startX = e.clientX;
-      startW = element.getBoundingClientRect().width;
+      const style = getComputedStyle(element);
+      startW = parseFloat(style.width) || element.offsetWidth;
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
     });
@@ -312,8 +314,9 @@ export class NodeRenderer {
     const handleMouseMove = (e) => {
       if (!isDragging) return;
       
-      const deltaX = e.clientX - startX;
-      const deltaY = e.clientY - startY;
+      const scale = this.canvasManager?.scale || 1;
+      const deltaX = (e.clientX - startX) / scale;
+      const deltaY = (e.clientY - startY) / scale;
       
       const newX = startNodeX + deltaX;
       const newY = startNodeY + deltaY;
