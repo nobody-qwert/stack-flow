@@ -41,10 +41,8 @@ export class Inspector {
       </div>
       
       <div class="form-group">
-        <label>Type:</label>
-        <div class="type-row">
-          <div class="type-label">${node.type.toUpperCase()}</div>
-          <button id="deleteNode" class="danger-light" title="Delete this node">Delete</button>
+        <div class="variable-controls">
+          <button id="deleteNode" class="danger-light" title="Delete this Module">Delete Module</button>
         </div>
       </div>
       

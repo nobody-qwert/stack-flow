@@ -922,3 +922,9 @@ input:focus, textarea:focus, select:focus {
   stroke: #ff0000;
   stroke-width: 2;
 }
+
+/* Hide API and Table creation buttons in topbar */
+#btnNewApi,
+#btnNewTable {
+  display: none !important;
+}
