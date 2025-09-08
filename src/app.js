@@ -61,14 +61,8 @@ class DataFlowApp {
   }
 
   setupEventListeners() {
-    // Canvas click for deselection - delegate to canvas manager
+    // Canvas click handling - removed selection clearing to keep inspector persistent
     const canvas = document.getElementById('canvas');
-    canvas.addEventListener('click', (e) => {
-      // Only clear selection if clicking directly on canvas or content, not on nodes or their children
-      if ((e.target === canvas || e.target.id === 'content') && !e.target.closest('.node')) {
-        store.clearSelection();
-      }
-    });
     
     // Prevent context menu on canvas
     canvas.addEventListener('contextmenu', (e) => {
