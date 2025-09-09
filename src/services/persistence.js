@@ -9,22 +9,18 @@ import { eventBus, EVENTS } from '../core/eventBus.js';
  * Export diagram to JSON
  * @returns {string} JSON string of the diagram
  */
-export function exportDiagram() {
+export function exportDiagram(pretty = true) {
   const state = store.getState();
+  // v1 export schema: minimal + explicit version
   const diagram = {
-    version: state.diagram.version,
+    version: 1,
     title: state.diagram.title,
     nodes: state.diagram.nodes,
-    edges: state.diagram.edges,
-    metadata: {
-      exportedAt: new Date().toISOString(),
-      nodeCount: state.diagram.nodes.length,
-      edgeCount: state.diagram.edges.length
-    }
+    edges: state.diagram.edges
   };
-  
+
   eventBus.emit(EVENTS.DIAGRAM_EXPORT, { diagram });
-  return JSON.stringify(diagram, null, 2);
+  return JSON.stringify(diagram, null, pretty ? 2 : 0);
 }
 
 /**
@@ -34,30 +30,79 @@ export function exportDiagram() {
  */
 export function importDiagram(jsonString) {
   try {
-    const diagram = JSON.parse(jsonString);
-    
-    // Basic validation
-    if (!diagram.nodes || !Array.isArray(diagram.nodes)) {
-      throw new Error('Invalid diagram format: missing nodes array');
+    const parsed = JSON.parse(jsonString);
+    const version = parsed?.version;
+
+    // Helper: strip legacy prefixes in IDs
+    const stripId = (id) => (typeof id === 'string' ? id.replace(/^(?:node|var|edge)_/, '') : id);
+
+    if (version === 1 || version === '1') {
+      // v1 importer: minimal schema with explicit version
+      if (!Array.isArray(parsed.nodes)) {
+        throw new Error('Invalid v1 diagram: nodes must be an array');
+      }
+      if (!Array.isArray(parsed.edges)) {
+        throw new Error('Invalid v1 diagram: edges must be an array');
+      }
+
+      const diagramV1 = {
+        version: '1',
+        title: parsed.title || 'Untitled diagram',
+        nodes: parsed.nodes,
+        edges: parsed.edges
+      };
+
+      store.loadDiagram(diagramV1);
+      eventBus.emit(EVENTS.DIAGRAM_IMPORT, { diagram: diagramV1 });
+      return true;
     }
-    
-    if (!diagram.edges || !Array.isArray(diagram.edges)) {
-      throw new Error('Invalid diagram format: missing edges array');
+
+    // Legacy (v0) importer: no version field
+    if (!Array.isArray(parsed.nodes)) {
+      throw new Error('Invalid legacy diagram: missing nodes array');
     }
-    
-    // Load into store
-    store.loadDiagram({
-      version: diagram.version || '0.1',
-      title: diagram.title || 'Untitled diagram',
-      nodes: diagram.nodes,
-      edges: diagram.edges
-    });
-    
-    eventBus.emit(EVENTS.DIAGRAM_IMPORT, { diagram });
+    if (!Array.isArray(parsed.edges)) {
+      throw new Error('Invalid legacy diagram: missing edges array');
+    }
+
+    // Normalize IDs by stripping any "node_"/"var_"/"edge_" prefixes
+    const nodes = (parsed.nodes || []).map((n) => ({
+      ...n,
+      id: stripId(n?.id),
+      variables: (n?.variables || []).map((v) => ({
+        ...v,
+        id: stripId(v?.id)
+      }))
+    }));
+
+    const edges = (parsed.edges || []).map((e) => ({
+      ...e,
+      id: stripId(e?.id),
+      from: {
+        ...(e?.from || {}),
+        nodeId: stripId(e?.from?.nodeId),
+        portId: stripId(e?.from?.portId)
+      },
+      to: {
+        ...(e?.to || {}),
+        nodeId: stripId(e?.to?.nodeId),
+        portId: stripId(e?.to?.portId)
+      }
+    }));
+
+    const diagramV0 = {
+      version: parsed.version || '0.1',
+      title: parsed.title || 'Untitled diagram',
+      nodes,
+      edges
+    };
+
+    store.loadDiagram(diagramV0);
+    eventBus.emit(EVENTS.DIAGRAM_IMPORT, { diagram: diagramV0 });
     return true;
   } catch (error) {
     console.error('Failed to import diagram:', error);
-    alert('Failed to import diagram: ' + error.message);
+    alert('Failed to import diagram: ' + (error?.message || error));
     return false;
   }
 }

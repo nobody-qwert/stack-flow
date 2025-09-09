@@ -41,7 +41,9 @@ export function generatePrefixedId(prefix) {
   return `${prefix}_${generateShortId()}`;
 }
 
-// Convenience functions for specific entity types
-export const generateNodeId = () => generatePrefixedId('node');
-export const generateVariableId = () => generatePrefixedId('var');
-export const generateEdgeId = () => generatePrefixedId('edge');
+/**
+ * Convenience functions for specific entity types (compact IDs, no prefixes)
+ */
+export const generateNodeId = () => generateShortId();
+export const generateVariableId = () => generateShortId();
+export const generateEdgeId = () => generateShortId();

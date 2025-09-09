@@ -74,7 +74,7 @@ function parseHashParams() {
  */
 export async function buildShareUrlFromState(maxUrlLength = 15000) {
   const LZ = await ensureLZString();
-  const json = exportDiagram(); // string
+  const json = exportDiagram(false); // minified JSON for better compression
   const token = LZ.compressToEncodedURIComponent(json);
   const base = getShareBaseUrl();
   const url = `${base}#d=${token}`;
