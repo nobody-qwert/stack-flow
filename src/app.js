@@ -108,15 +108,18 @@ class DataFlowApp {
       exportViewportPng(filename);
     });
 
-    document.getElementById('btnExportHtml').addEventListener('click', async () => {
-      const state = store.getState();
-      const filename = this.getSafeFilename(state.diagram.title) + '.html';
-      try {
-        await exportStandaloneHtml(filename);
-      } catch (err) {
-        alert('Export HTML failed: ' + (err?.message || err));
-      }
-    });
+    const btnExportHtml = document.getElementById('btnExportHtml');
+    if (btnExportHtml) {
+      btnExportHtml.addEventListener('click', async () => {
+        const state = store.getState();
+        const filename = this.getSafeFilename(state.diagram.title) + '.html';
+        try {
+          await exportStandaloneHtml(filename);
+        } catch (err) {
+          alert('Export HTML failed: ' + (err?.message || err));
+        }
+      });
+    }
 
     
     

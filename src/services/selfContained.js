@@ -263,7 +263,6 @@ ${cssSafe}
           <span class="sep"></span>
           <button id="btnExport" title="Export diagram to JSON">Export</button>
           <button id="btnExportPng" title="Export visible canvas to PNG">Export PNG</button>
-          <button id="btnExportHtml" title="Export as Offline HTML">Export HTML</button>
         </div>
       </header>
 
