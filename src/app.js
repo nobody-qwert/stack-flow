@@ -9,6 +9,7 @@ import { createNode, createVariable, createDiagram } from './core/types.js';
 import { generateNodeId, generateVariableId, generateEdgeId } from './core/id.js';
 import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
 import { exportViewportPng } from './services/exporters.js';
+import { exportStandaloneHtml } from './services/selfContained.js';
 import { buildShareUrlFromState, importFromUrlIfPresent, copyToClipboard } from './services/share.js';
 
 // Import modular UI components
@@ -106,6 +107,16 @@ class DataFlowApp {
       const state = store.getState();
       const filename = this.getSafeFilename(state.diagram.title) + '.png';
       exportViewportPng(filename);
+    });
+
+    document.getElementById('btnExportHtml').addEventListener('click', async () => {
+      const state = store.getState();
+      const filename = this.getSafeFilename(state.diagram.title) + '.html';
+      try {
+        await exportStandaloneHtml(filename);
+      } catch (err) {
+        alert('Export HTML failed: ' + (err?.message || err));
+      }
     });
 
     document.getElementById('btnShare').addEventListener('click', async () => {
@@ -296,7 +307,14 @@ class DataFlowApp {
   }
 }
 
-// Initialize the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+/**
+ * Initialize app immediately if DOM is already parsed (supports dynamic import in standalone HTML),
+ * otherwise wait for DOMContentLoaded (original behavior).
+ */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    new DataFlowApp();
+  });
+} else {
   new DataFlowApp();
-});
+}
