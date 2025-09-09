@@ -151,7 +151,7 @@ export const createCommand = (description, executeFunc, undoFunc) => ({
 
 // Specific command creators
 export const createAddNodeCommand = (store, node) => createCommand(
-  `Add ${node.type} node`,
+  'Add node',
   () => store.addNode(node),
   () => store.deleteNode(node.id)
 );
@@ -161,7 +161,7 @@ export const createDeleteNodeCommand = (store, nodeId) => {
   const connectedEdges = store.getEdgesForNode(nodeId);
   
   return createCommand(
-    `Delete ${node?.type || 'node'}`,
+    'Delete node',
     () => store.deleteNode(nodeId),
     () => {
       // Restore node
@@ -178,7 +178,7 @@ export const createUpdateNodeCommand = (store, nodeId, updates, previousValues) 
   const node = store.getNodeById(nodeId);
   
   return createCommand(
-    `Update ${node?.type || 'node'}`,
+    'Update node',
     () => store.updateNode(nodeId, updates),
     () => store.updateNode(nodeId, previousValues)
   );

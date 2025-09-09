@@ -83,7 +83,7 @@ export class Inspector {
   }
 
   setupNodeInspectorHandlers(node) {
-    console.log('setupNodeInspectorHandlers: start for node', node?.id, 'type=', node?.type);
+    console.log('setupNodeInspectorHandlers: start for node', node?.id);
     
     // Title input
     const titleInput = document.getElementById('nodeTitle');

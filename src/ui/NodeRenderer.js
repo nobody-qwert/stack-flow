@@ -25,10 +25,10 @@ export class NodeRenderer {
 
   createNodeElement(node, state) {
     const isSelected = state.selection.type === 'node' && state.selection.ids.includes(node.id);
-    console.log(`Creating node element: id="${node.id}", type="${node.type}", title="${node.title}", isSelected=${isSelected}`);
+    console.log(`Creating node element: id="${node.id}", title="${node.title}", isSelected=${isSelected}`);
     
     const element = document.createElement('div');
-    element.className = `node ${node.type} ${isSelected ? 'selected' : ''}`;
+    element.className = `node ${isSelected ? 'selected' : ''}`;
     element.style.left = `${node.position.x}px`;
     element.style.top = `${node.position.y}px`;
     element.dataset.nodeId = node.id;

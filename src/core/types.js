@@ -20,7 +20,6 @@
 /**
  * @typedef {Object} Node
  * @property {string} id - Unique identifier
- * @property {'api'|'table'|'module'|'gui'} type - Node type
  * @property {string} title - Display title
  * @property {Position} position - Canvas position
  * @property {Variable[]} variables - Array of variables/slots
@@ -66,12 +65,6 @@
  */
 
 // Enums and constants
-export const NODE_TYPES = {
-  API: 'api',
-  TABLE: 'table',
-  MODULE: 'module',
-  GUI: 'gui' // deprecated alias
-};
 
 
 export const DATA_TYPES = {
@@ -113,9 +106,8 @@ export const createVariable = (name, dataType = DATA_TYPES.STRING) => ({
   color: null // optional background color for variable row (hex or null)
 });
 
-export const createNode = (type, title, position = createPosition()) => ({
+export const createNode = (title, position = createPosition()) => ({
   id: null, // Will be set by ID generator
-  type,
   title,
   position,
   variables: [],
@@ -139,20 +131,10 @@ export const createDiagram = () => ({
 });
 
 // Type validation helpers
-export const isValidNodeType = (type) => Object.values(NODE_TYPES).includes(type);
 export const isValidDataType = (dataType) => Object.values(DATA_TYPES).includes(dataType);
 export const isValidEdgeStatus = (status) => Object.values(EDGE_STATUS).includes(status);
 
 // Node type specific helpers
-export const getNodeTypeColor = (type) => {
-  switch (type) {
-    case NODE_TYPES.API: return '#28a745';
-    case NODE_TYPES.TABLE: return '#dc3545';
-    case NODE_TYPES.MODULE: return '#ffc107';
-    case NODE_TYPES.GUI: return '#ffc107';
-    default: return '#6c757d';
-  }
-};
 
 
 // Metadata templates for different node types

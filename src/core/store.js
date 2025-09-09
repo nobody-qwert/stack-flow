@@ -2,7 +2,7 @@
  * @fileoverview Central state store with immutable-style updates and selectors
  */
 
-import { createDiagram, NODE_TYPES } from './types.js';
+import { createDiagram } from './types.js';
 import { eventBus, EVENTS } from './eventBus.js';
 
 class Store {
@@ -406,9 +406,10 @@ class Store {
     const migrated = {
       ...diagram,
       title: diagram.title || 'Untitled diagram',
-      nodes: (diagram.nodes || []).map(n =>
-        n && n.type === NODE_TYPES.GUI ? { ...n, type: NODE_TYPES.MODULE } : n
-      )
+      nodes: (diagram.nodes || []).map(n => {
+        const { type, ...rest } = (n || {});
+        return rest;
+      })
     };
 
     this.setState(state => ({

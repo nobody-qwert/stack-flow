@@ -5,7 +5,7 @@
 import { store } from './core/store.js';
 import { eventBus, EVENTS } from './core/eventBus.js';
 import { commandStack, setupKeyboardShortcuts } from './core/commandStack.js';
-import { NODE_TYPES, createNode, createVariable, createDiagram } from './core/types.js';
+import { createNode, createVariable, createDiagram } from './core/types.js';
 import { generateNodeId, generateVariableId, generateEdgeId } from './core/id.js';
 import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
 import { exportViewportPng } from './services/exporters.js';
@@ -89,16 +89,10 @@ class DataFlowApp {
 
   setupUIHandlers() {
     // Top bar buttons
-    document.getElementById('btnNewApi').addEventListener('click', () => {
-      this.createNode(NODE_TYPES.API);
-    });
     
-    document.getElementById('btnNewTable').addEventListener('click', () => {
-      this.createNode(NODE_TYPES.TABLE);
-    });
     
     document.getElementById('btnNewModule').addEventListener('click', () => {
-      this.createNode(NODE_TYPES.MODULE);
+      this.createNode();
     });
     
     
@@ -191,28 +185,16 @@ class DataFlowApp {
     });
   }
 
-  createNode(type) {
+  createNode() {
     const position = this.getNewNodePosition();
     let title = 'New Node';
     let metadata = {};
     
-    switch (type) {
-      case NODE_TYPES.API:
-        title = 'GET /api/endpoint';
-        metadata = { method: 'GET', url: '/api/endpoint' };
-        break;
-      case NODE_TYPES.TABLE:
-        title = 'public.table';
-        metadata = { schema: 'public', table: 'table', pk: [] };
-        break;
-      case NODE_TYPES.MODULE:
-      case NODE_TYPES.GUI: // back-compat alias
-        title = 'Module';
-        metadata = { route: '', framework: '' };
-        break;
-    }
+    // Always create a Module node
+    title = 'Module';
+    metadata = { route: '', framework: '' };
     
-    const node = createNode(type, title, position);
+    const node = createNode(title, position);
     node.id = generateNodeId();
     node.metadata = metadata;
     
