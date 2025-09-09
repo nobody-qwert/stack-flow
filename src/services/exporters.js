@@ -44,6 +44,29 @@ function downloadBlob(blob, filename) {
 }
 
 /**
+ * Temporarily disable shadows/filters in the canvas subtree during export.
+ * html2canvas + CSS transforms can exaggerate box-shadow when scale < 1.
+ * Returns a cleanup function that restores styles.
+ */
+function applyExportCssOverrides() {
+  const style = document.createElement('style');
+  style.setAttribute('data-export-override', 'no-shadows');
+  style.textContent = `
+    /* Scope to the canvas so the rest of the UI remains unaffected */
+    #canvas, #canvas * {
+      box-shadow: none !important;
+      text-shadow: none !important;
+      filter: none !important;     /* also removes drop-shadow filters */
+      transition: none !important; /* avoid transient effects while cloning */
+    }
+  `;
+  document.head.appendChild(style);
+  return () => {
+    try { style.remove(); } catch (_) {}
+  };
+}
+
+/**
  * Export exactly what is visible in the canvas viewport to PNG.
  * - Captures the #canvas element (which shows current pan/zoom)
  * - Temporarily hides the grid background on #content
@@ -61,6 +84,7 @@ export async function exportViewportPng(filename = 'diagram.png') {
   // Temporarily hide the grid dots (CSS background-image on #content)
   const prevInlineBg = contentEl.style.backgroundImage;
   contentEl.style.backgroundImage = 'none';
+  const removeExportCss = applyExportCssOverrides();
 
   try {
     const html2canvas = await ensureHtml2Canvas();
@@ -84,5 +108,6 @@ export async function exportViewportPng(filename = 'diagram.png') {
   } finally {
     // Restore grid
     contentEl.style.backgroundImage = prevInlineBg || '';
+    if (typeof removeExportCss === 'function') removeExportCss();
   }
 }
