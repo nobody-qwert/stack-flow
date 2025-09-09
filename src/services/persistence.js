@@ -11,16 +11,48 @@ import { eventBus, EVENTS } from '../core/eventBus.js';
  */
 export function exportDiagram(pretty = true) {
   const state = store.getState();
-  // v1 export schema: minimal + explicit version
-  const diagram = {
-    version: 1,
-    title: state.diagram.title,
-    nodes: state.diagram.nodes,
-    edges: state.diagram.edges
+
+  // Map internal -> compact v1 schema (2-3 char keys)
+  const mapVar = (v) => {
+    const out = { i: v.id, n: v.name, dt: v.dataType };
+    if (v.sampleValue !== undefined) out.sv = v.sampleValue;
+    if (v.description) out.d = v.description;
+    if (v.color) out.c = v.color;
+    return out;
   };
 
-  eventBus.emit(EVENTS.DIAGRAM_EXPORT, { diagram });
-  return JSON.stringify(diagram, null, pretty ? 2 : 0);
+  const mapNode = (n) => {
+    const out = {
+      i: n.id,
+      t: n.title,
+      p: { x: n.position?.x || 0, y: n.position?.y || 0 },
+      v: (n.variables || []).map(mapVar)
+    };
+    if (typeof n.width === 'number') out.w = n.width;
+    if (n.showVariableTypes !== null && n.showVariableTypes !== undefined) out.vt = n.showVariableTypes;
+    return out;
+  };
+
+  const mapEdge = (e) => {
+    const f = { n: e.from?.nodeId, p: e.from?.portId };
+    if (e.from?.side) f.s = e.from.side;
+    const t = { n: e.to?.nodeId, p: e.to?.portId };
+    if (e.to?.side) t.s = e.to.side;
+    const out = { i: e.id, f, t };
+    if (e.transform !== undefined) out.tr = e.transform;
+    if (e.status && e.status !== 'ok') out.st = e.status;
+    return out;
+  };
+
+  const compact = {
+    v: 1,
+    t: state.diagram.title,
+    n: (state.diagram.nodes || []).map(mapNode),
+    e: (state.diagram.edges || []).map(mapEdge)
+  };
+
+  eventBus.emit(EVENTS.DIAGRAM_EXPORT, { diagram: compact });
+  return JSON.stringify(compact, null, pretty ? 2 : 0);
 }
 
 /**
@@ -31,30 +63,54 @@ export function exportDiagram(pretty = true) {
 export function importDiagram(jsonString) {
   try {
     const parsed = JSON.parse(jsonString);
-    const version = parsed?.version;
+    const version = parsed?.version ?? parsed?.v;
 
     // Helper: strip legacy prefixes in IDs
     const stripId = (id) => (typeof id === 'string' ? id.replace(/^(?:node|var|edge)_/, '') : id);
 
+    // v1 importer (supports both long v1 and compact v1)
     if (version === 1 || version === '1') {
-      // v1 importer: minimal schema with explicit version
-      if (!Array.isArray(parsed.nodes)) {
-        throw new Error('Invalid v1 diagram: nodes must be an array');
-      }
-      if (!Array.isArray(parsed.edges)) {
-        throw new Error('Invalid v1 diagram: edges must be an array');
+
+      // Compact v1 (keys: v/t/n/e)
+      if (Array.isArray(parsed?.n) && Array.isArray(parsed?.e)) {
+        const mapNode = (cn) => ({
+          id: cn.i,
+          title: cn.t || '',
+          position: { x: cn.p?.x || 0, y: cn.p?.y || 0 },
+          variables: (cn.v || []).map((cv) => ({
+            id: cv.i,
+            name: cv.n || '',
+            dataType: cv.dt || 'string',
+            sampleValue: Object.prototype.hasOwnProperty.call(cv, 'sv') ? cv.sv : undefined,
+            description: cv.d,
+            color: (cv.c === undefined ? null : cv.c)
+          })),
+          width: typeof cn.w === 'number' ? cn.w : undefined,
+          showVariableTypes: (cn.vt === null || cn.vt === undefined) ? null : cn.vt,
+          metadata: {}
+        });
+
+        const mapEdge = (ce) => ({
+          id: ce.i,
+          from: { nodeId: ce.f?.n, portId: ce.f?.p, side: ce.f?.s },
+          to: { nodeId: ce.t?.n, portId: ce.t?.p, side: ce.t?.s },
+          transform: ce.tr,
+          status: ce.st || 'ok'
+        });
+
+        const diagramV1Compact = {
+          version: '1',
+          title: parsed.t || parsed.title || 'Untitled diagram',
+          nodes: parsed.n.map(mapNode),
+          edges: parsed.e.map(mapEdge)
+        };
+
+        store.loadDiagram(diagramV1Compact);
+        eventBus.emit(EVENTS.DIAGRAM_IMPORT, { diagram: diagramV1Compact });
+        return true;
       }
 
-      const diagramV1 = {
-        version: '1',
-        title: parsed.title || 'Untitled diagram',
-        nodes: parsed.nodes,
-        edges: parsed.edges
-      };
-
-      store.loadDiagram(diagramV1);
-      eventBus.emit(EVENTS.DIAGRAM_IMPORT, { diagram: diagramV1 });
-      return true;
+      throw new Error('Invalid v1 diagram: missing nodes/edges');
     }
 
     // Legacy (v0) importer: no version field
@@ -208,15 +264,24 @@ export function getSavedDiagramInfo() {
   try {
     const jsonString = localStorage.getItem(STORAGE_KEY);
     const timestamp = localStorage.getItem(STORAGE_KEY + '_timestamp');
-    
+
     if (!jsonString) {
       return null;
     }
-    
+
     const diagram = JSON.parse(jsonString);
+    const nodeCount =
+      (Array.isArray(diagram.nodes) && diagram.nodes.length) ||
+      (Array.isArray(diagram.n) && diagram.n.length) ||
+      0;
+    const edgeCount =
+      (Array.isArray(diagram.edges) && diagram.edges.length) ||
+      (Array.isArray(diagram.e) && diagram.e.length) ||
+      0;
+
     return {
-      nodeCount: diagram.nodes?.length || 0,
-      edgeCount: diagram.edges?.length || 0,
+      nodeCount,
+      edgeCount,
       savedAt: timestamp ? new Date(parseInt(timestamp)) : null,
       exportedAt: diagram.metadata?.exportedAt ? new Date(diagram.metadata.exportedAt) : null
     };
