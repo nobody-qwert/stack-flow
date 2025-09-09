@@ -10,7 +10,6 @@ import { generateNodeId, generateVariableId, generateEdgeId } from './core/id.js
 import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
 import { exportViewportPng } from './services/exporters.js';
 import { exportStandaloneHtml } from './services/selfContained.js';
-import { buildShareUrlFromState, importFromUrlIfPresent, copyToClipboard } from './services/share.js';
 
 // Import modular UI components
 import { CanvasManager } from './ui/CanvasManager.js';
@@ -119,15 +118,6 @@ class DataFlowApp {
       }
     });
 
-    document.getElementById('btnShare').addEventListener('click', async () => {
-      try {
-        const url = await buildShareUrlFromState();
-        await copyToClipboard(url);
-        alert('Share link copied to clipboard');
-      } catch (err) {
-        alert('Failed to build share link: ' + (err?.message || err));
-      }
-    });
     
     
     document.getElementById('btnImport').addEventListener('click', () => {
@@ -267,15 +257,7 @@ class DataFlowApp {
   }
 
   async loadInitialDiagram() {
-    try {
-      const imported = await importFromUrlIfPresent();
-      if (!imported) {
-        this.loadSavedDiagram();
-      }
-    } catch (e) {
-      // On error, fall back to saved diagram flow
-      this.loadSavedDiagram();
-    }
+    this.loadSavedDiagram();
   }
 
   render(state) {

@@ -33,7 +33,6 @@ const MODULE_PATHS = [
   // Services
   'src/services/persistence.js',
   'src/services/exporters.js',
-  'src/services/share.js',
   'src/services/validate.js',
 
   // This exporter (for offline re-export)
@@ -262,7 +261,6 @@ ${cssSafe}
           <button id="btnNewDiagram" title="Start a new blank diagram">New</button>
           <button id="btnImport" title="Import diagram JSON">Import</button>
           <span class="sep"></span>
-          <button id="btnShare" title="Copy link to this diagram" style="display:none">Share Link</button>
           <button id="btnExport" title="Export diagram to JSON">Export</button>
           <button id="btnExportPng" title="Export visible canvas to PNG">Export PNG</button>
           <button id="btnExportHtml" title="Export as Offline HTML">Export HTML</button>
@@ -330,9 +328,6 @@ ${html2canvasCode || ''}
         } catch (e) {
           console.warn('Failed to seed localStorage from embedded diagram:', e);
         }
-        // Ensure Share is hidden in this offline artifact
-        const shareBtn = document.getElementById('btnShare');
-        if (shareBtn) shareBtn.style.display = 'none';
         // Start app
         import('__m__/src/app.js');
       })();
