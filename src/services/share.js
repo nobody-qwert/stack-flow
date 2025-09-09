@@ -6,7 +6,7 @@
  * - Keeps URLs reasonably short via compression.
  */
 
-import { exportDiagram, importDiagram } from './persistence.js';
+import { exportDiagramForShare, importDiagram } from './persistence.js';
 
 function getShareBaseUrl() {
   try {
@@ -74,7 +74,8 @@ function parseHashParams() {
  */
 export async function buildShareUrlFromState(maxUrlLength = 15000) {
   const LZ = await ensureLZString();
-  const json = exportDiagram(false); // minified JSON for better compression
+  // Use share payload that includes BOTH compact (v/t/n/e) and long (version/title/nodes/edges)
+  const json = exportDiagramForShare(false);
   const token = LZ.compressToEncodedURIComponent(json);
   const base = getShareBaseUrl();
   const url = `${base}#d=${token}`;

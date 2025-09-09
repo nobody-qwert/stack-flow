@@ -56,6 +56,94 @@ export function exportDiagram(pretty = true) {
 }
 
 /**
+ * Export a share-friendly payload that supports both:
+ * - Compact v1 (v/t/n/e)
+ * - Legacy/long v1 consumers (version/title/nodes/edges)
+ * This increases compatibility for older deployments while keeping links compressed.
+ */
+export function exportDiagramForShare(pretty = false) {
+  const state = store.getState();
+
+  // Compact mappers
+  const mapVarC = (v) => {
+    const out = { i: v.id, n: v.name, dt: v.dataType };
+    if (v.sampleValue !== undefined) out.sv = v.sampleValue;
+    if (v.description) out.d = v.description;
+    if (v.color) out.c = v.color;
+    return out;
+  };
+  const mapNodeC = (n) => {
+    const out = {
+      i: n.id,
+      t: n.title,
+      p: { x: n.position?.x || 0, y: n.position?.y || 0 },
+      v: (n.variables || []).map(mapVarC)
+    };
+    if (typeof n.width === 'number') out.w = n.width;
+    if (n.showVariableTypes !== null && n.showVariableTypes !== undefined) out.vt = n.showVariableTypes;
+    return out;
+  };
+  const mapEdgeC = (e) => {
+    const f = { n: e.from?.nodeId, p: e.from?.portId };
+    if (e.from?.side) f.s = e.from.side;
+    const t = { n: e.to?.nodeId, p: e.to?.portId };
+    if (e.to?.side) t.s = e.to.side;
+    const out = { i: e.id, f, t };
+    if (e.transform !== undefined) out.tr = e.transform;
+    if (e.status && e.status !== 'ok') out.st = e.status;
+    return out;
+  };
+
+  // Long mappers (legacy-friendly keys; still v1 and no metadata)
+  const mapVarL = (v) => {
+    const out = { id: v.id, name: v.name, dataType: v.dataType };
+    if (v.sampleValue !== undefined) out.sampleValue = v.sampleValue;
+    if (v.description) out.description = v.description;
+    if (v.color) out.color = v.color;
+    return out;
+  };
+  const mapNodeL = (n) => {
+    const out = {
+      id: n.id,
+      title: n.title,
+      position: { x: n.position?.x || 0, y: n.position?.y || 0 },
+      variables: (n.variables || []).map(mapVarL)
+    };
+    if (typeof n.width === 'number') out.width = n.width;
+    if (n.showVariableTypes !== null && n.showVariableTypes !== undefined) out.showVariableTypes = n.showVariableTypes;
+    return out;
+  };
+  const mapEdgeL = (e) => {
+    const out = {
+      id: e.id,
+      from: { nodeId: e.from?.nodeId, portId: e.from?.portId, side: e.from?.side },
+      to: { nodeId: e.to?.nodeId, portId: e.to?.portId, side: e.to?.side }
+    };
+    if (e.transform !== undefined) out.transform = e.transform;
+    if (e.status) out.status = e.status;
+    return out;
+  };
+
+  const long = {
+    version: 1,
+    title: state.diagram.title,
+    nodes: (state.diagram.nodes || []).map(mapNodeL),
+    edges: (state.diagram.edges || []).map(mapEdgeL)
+  };
+
+  // Merge long + compact keys in one object to maximize compatibility
+  const payload = {
+    ...long,
+    v: 1,
+    t: long.title,
+    n: (state.diagram.nodes || []).map(mapNodeC),
+    e: (state.diagram.edges || []).map(mapEdgeC)
+  };
+
+  return JSON.stringify(payload, null, pretty ? 2 : 0);
+}
+
+/**
  * Import diagram from JSON
  * @param {string} jsonString - JSON string to import
  * @returns {boolean} True if successful
