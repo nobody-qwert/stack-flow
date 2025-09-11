@@ -606,10 +606,10 @@ input:focus, textarea:focus, select:focus {
 
 /* Make the type selector narrower so the name input gains width */
 .var-type-select {
-  flex: 0 0 90px;
+  flex: 0 0 75px;  /* narrower selector */
   font-size: 10px;
   padding: 2px 4px;
-  min-width: 84px;
+  min-width: 75px; /* keep stable, lets name input gain the difference */
 }
 
 /* Keep any IO selector (if present) at the previous width */
