@@ -592,21 +592,32 @@ input:focus, textarea:focus, select:focus {
   align-items: center;
   gap: 4px;
   margin-bottom: 4px;
+  flex: 1 1 auto;   /* let row consume remaining width */
+  min-width: 0;     /* allow children to flex without overflowing */
 }
 
 .var-name-input {
-  flex: 2;
+  flex: 1 1 auto;   /* expand to fill leftover space */
+  width: 100%;
+  min-width: 0;     /* enable flexbox to actually grow/shrink as needed */
   font-size: 11px;
   padding: 2px 4px;
-  min-width: 80px;
 }
 
-.var-type-select,
-.var-io-select {
-  flex: 1;
+/* Make the type selector narrower so the name input gains width */
+.var-type-select {
+  flex: 0 0 90px;
   font-size: 10px;
   padding: 2px 4px;
-  min-width: 60px;
+  min-width: 84px;
+}
+
+/* Keep any IO selector (if present) at the previous width */
+.var-io-select {
+  flex: 0 0 110px;
+  font-size: 10px;
+  padding: 2px 4px;
+  min-width: 96px;
 }
 
 .delete-var-btn {
@@ -623,11 +634,21 @@ input:focus, textarea:focus, select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 20px;   /* keep square, prevent flex shrink */
+  min-width: 20px; /* ensure not narrower than height */
 }
 
 .delete-var-btn:hover {
   background: #c82333;
   border-color: #c82333;
+}
+
+/* Keep color picker square and non-shrinking in flex row */
+.variable-edit-row .var-color-btn {
+  width: 20px !important;
+  height: 20px !important;
+  flex: 0 0 20px;
+  min-width: 20px;
 }
 
 .variable-description {
