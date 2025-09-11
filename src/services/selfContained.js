@@ -166,6 +166,33 @@ async function getHtml2CanvasCode() {
 }
 
 /**
+ * Resolve CSS text without relying on fetch() when opened via file://
+ * - Prefer embedded cssBase64 from __SELF_MODULES__ (present in standalone exports)
+ * - Then try reading inline style tag with id="__INLINE_CSS__"
+ * - Finally, fallback to fetch('./assets/styles.css') for hosted app
+ */
+async function getCssText() {
+  const embedded = readEmbeddedSelfModules();
+  if (embedded?.cssBase64) {
+    try {
+      return decodeBase64(embedded.cssBase64);
+    } catch (_) {
+      // fall through
+    }
+  }
+  const styleEl = document.getElementById('__INLINE_CSS__');
+  if (styleEl && styleEl.textContent) {
+    return styleEl.textContent;
+  }
+  try {
+    return await fetchText('./assets/styles.css');
+  } catch (e) {
+    console.warn('Could not load CSS (offline/blocked). Proceeding with empty CSS.', e);
+    return '';
+  }
+}
+
+/**
  * Collect raw sources for all modules, either from embedded map or via fetch().
  * Returns { rawSources: Record<path, code>, list: string[] }
  */
@@ -231,7 +258,8 @@ function buildStandaloneHtml({ title, cssText, initialJson, importMap, html2canv
   const selfModulesPayload = {
     filesBase64,
     list,
-    html2canvasBase64: html2canvasCode ? encodeBase64(html2canvasCode) : ''
+    html2canvasBase64: html2canvasCode ? encodeBase64(html2canvasCode) : '',
+    cssBase64: cssSafe ? encodeBase64(cssSafe) : ''
   };
   const selfModulesJsonSafe = escapeForScriptTag(JSON.stringify(selfModulesPayload));
 
@@ -242,7 +270,7 @@ function buildStandaloneHtml({ title, cssText, initialJson, importMap, html2canv
     <meta charset="utf-8" />
     <title>${safeTitle} - Data Flow Designer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
+    <style id="__INLINE_CSS__">
 ${cssSafe}
     </style>
   </head>
@@ -263,6 +291,7 @@ ${cssSafe}
           <span class="sep"></span>
           <button id="btnExport" title="Export diagram to JSON">Export</button>
           <button id="btnExportPng" title="Export visible canvas to PNG">Export PNG</button>
+          <button id="btnExportHtml" title="Export as Offline HTML">Export HTML</button>
         </div>
       </header>
 
@@ -358,8 +387,8 @@ export async function exportStandaloneHtml(filename = 'diagram.html') {
   // 1) Collect current diagram JSON (compact, no pretty)
   const initialJson = exportDiagram(false);
 
-  // 2) Gather CSS
-  const cssText = await fetchText('./assets/styles.css');
+  // 2) Gather CSS (file:// safe)
+  const cssText = await getCssText();
 
   // 3) Gather module raw sources (embedded for offline re-export, or fetched)
   const { rawSources, list } = await collectModuleRawSources();
