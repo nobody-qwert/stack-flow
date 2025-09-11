@@ -121,6 +121,41 @@ class DataFlowApp {
       });
     }
 
+    // About dialog handlers
+    const btnAbout = document.getElementById('btnAbout');
+    const aboutDialog = document.getElementById('aboutDialog');
+    const aboutCloseBtn = document.getElementById('aboutCloseBtn');
+    
+    if (btnAbout && aboutDialog && aboutCloseBtn) {
+      const openAbout = () => {
+        aboutDialog.classList.remove('hidden');
+        aboutCloseBtn.focus();
+      };
+      
+      const closeAbout = () => {
+        aboutDialog.classList.add('hidden');
+        btnAbout.focus();
+      };
+      
+      btnAbout.addEventListener('click', openAbout);
+      aboutCloseBtn.addEventListener('click', closeAbout);
+      
+      // Close on overlay click
+      aboutDialog.addEventListener('click', (e) => {
+        if (e.target === aboutDialog || e.target.classList.contains('dialog-overlay')) {
+          closeAbout();
+        }
+      });
+      
+      // Close on ESC key
+      const handleAboutEsc = (e) => {
+        if (e.key === 'Escape' && !aboutDialog.classList.contains('hidden')) {
+          closeAbout();
+        }
+      };
+      document.addEventListener('keydown', handleAboutEsc);
+    }
+
     
     
     document.getElementById('btnImport').addEventListener('click', () => {

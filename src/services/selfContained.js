@@ -278,6 +278,7 @@ ${cssSafe}
     <div id="app">
       <header class="topbar">
         <div class="brand">Data Flow Designer</div>
+        <button id="btnAbout" title="About" aria-label="About">ⓘ</button>
         <div class="diagram-title-container">
           <input type="text" id="diagramTitle" class="diagram-title" placeholder="Untitled diagram" />
         </div>
@@ -323,6 +324,25 @@ ${cssSafe}
     </div>
 
     <input type="file" id="fileInput" accept="application/json" style="display:none" />
+
+    <!-- About Modal -->
+    <div id="aboutDialog" class="about-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+      <div class="dialog-overlay">
+        <div class="dialog-content" role="document">
+          <h3 id="aboutTitle">About Data Flow Designer</h3>
+          <p style="margin: 0 0 12px 0;">Visual tool for building and sharing data flow diagrams.</p>
+          <ul style="margin: 0 0 16px 18px; line-height: 1.6;">
+            <li>Author: <a href="https://github.com/nobody-qwert" target="_blank" rel="noopener">nobody-qwert</a></li>
+            <li>Repository: <a href="https://github.com/nobody-qwert/stack-flow" target="_blank" rel="noopener">stack-flow</a></li>
+            <li>Discussions: <a href="https://github.com/nobody-qwert/stack-flow/discussions" target="_blank" rel="noopener">Open a discussion</a></li>
+            <li>License: <a href="./LICENSE" target="_blank" rel="noopener">PolyForm Noncommercial 1.0.0</a></li>
+          </ul>
+          <div class="dialog-actions">
+            <button id="aboutCloseBtn" class="primary">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Embedded initial diagram -->
     <script id="initial-diagram" type="application/json">${initialJsonSafe}</script>

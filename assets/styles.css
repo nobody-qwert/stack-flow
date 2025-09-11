@@ -813,6 +813,38 @@ input:focus, textarea:focus, select:focus {
   border-color: #005a9e;
 }
 
+/* About dialog wrapper (same as import-dialog) */
+.about-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+/* Subtle About icon button (now next to brand) */
+.topbar #btnAbout {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #555;
+  padding: 2px 8px;
+  font-size: 14px;
+  line-height: 1;
+  margin-left: 10px; /* add spacing from brand */
+}
+.topbar #btnAbout:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: #777;
+}
+
+/* Group brand + about on the left */
+.brand-area {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Utility classes */
 .hidden {
   display: none !important;
