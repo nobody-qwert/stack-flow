@@ -311,12 +311,12 @@ ${cssSafe}
 
         <aside class="inspector" id="inspector">
           <div id="inspectorBody">
-            <p>Select a node, variable, or edge to edit details.</p>
+            <p>Select a node, field, or edge to edit details.</p>
           </div>
           <div id="inspectorFooter" class="inspector-footer">
             <label class="inspector-toggle">
               <input type="checkbox" id="toggleShowTypes" checked />
-              <span>Show variable types</span>
+              <span>Show field types</span>
             </label>
           </div>
         </aside>

@@ -30,7 +30,7 @@ export class Inspector {
     }
     
     // Default inspector content
-    inspectorBody.innerHTML = '<p>Select a node, variable, or edge to edit details.</p>';
+    inspectorBody.innerHTML = '<p>Select a node, field, or edge to edit details.</p>';
   }
 
   createNodeInspectorHTML(node) {
@@ -48,20 +48,20 @@ export class Inspector {
       
       <label class="inspector-toggle" style="margin-bottom: 12px;">
         <input type="checkbox" id="nodeHideTypes" ${node.showVariableTypes === false ? 'checked' : ''} />
-        <span>Always hide variable types</span>
+        <span>Always hide field types</span>
       </label>
       
       <div class="form-group">
-        <label>Variables:</label>
+        <label>Fields:</label>
         <div class="variable-controls">
-          <button id="addVariable">Add Variable</button>
+          <button id="addVariable">Add Field</button>
         </div>
         <div class="variables-list">
           ${node.variables.map(variable => `
             <div class="variable-item" data-variable-id="${variable.id}">
               <button type="button" class="var-drag-handle" title="Drag to reorder" tabindex="0" aria-label="Reorder" style="width:10px;height:18px;min-width:10px;display:flex;align-items:center;justify-content:center;color:#777;border:1px dashed #ccc;border-radius:2px;background:#fff;user-select:none;padding:0;margin-right:2px;font-size:10px;line-height:1;opacity:0.7">⋮</button>
               <div class="variable-edit-row">
-                <input type="text" class="var-name-input" value="${variable.name}" placeholder="Variable name">
+                <input type="text" class="var-name-input" value="${variable.name}" placeholder="Field name">
                 <select class="var-type-select">
                   <option value="string" ${variable.dataType === 'string' ? 'selected' : ''}>String</option>
                   <option value="number" ${variable.dataType === 'number' ? 'selected' : ''}>Number</option>
@@ -72,7 +72,7 @@ export class Inspector {
                   <option value="array" ${variable.dataType === 'array' ? 'selected' : ''}>Array</option>
                 </select>
                 <button class="var-color-btn" data-variable-id="${variable.id}" title="Change color" style="background: ${variable.color || '#f8f9fa'}; width: 20px; height: 20px; border: 1px solid #ccc; border-radius: 3px; padding: 0; margin: 0 2px;"></button>
-                <button class="delete-var-btn" title="Delete variable">×</button>
+                <button class="delete-var-btn" title="Delete field">×</button>
               </div>
               ${variable.description ? `<div class="variable-description"><small>${variable.description}</small></div>` : ''}
             </div>
@@ -138,7 +138,7 @@ export class Inspector {
       // Delete variable button
       const deleteBtn = item.querySelector('.delete-var-btn');
       deleteBtn.addEventListener('click', () => {
-        if (confirm('Delete this variable?')) {
+        if (confirm('Delete this field?')) {
           store.deleteVariable(node.id, variableId);
         }
       });
@@ -152,7 +152,7 @@ export class Inspector {
           store.deleteNode(node.id);
           const inspectorBody = document.getElementById('inspectorBody');
           if (inspectorBody) {
-            inspectorBody.innerHTML = '<p>Select a node, variable, or edge to edit details.</p>';
+            inspectorBody.innerHTML = '<p>Select a node, field, or edge to edit details.</p>';
           }
         }
       });
