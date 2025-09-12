@@ -29,11 +29,12 @@ Tip: the exported HTML includes the app itself, so you can open it from Finder/E
 
 ## License (plain English)
 
-PolyForm Noncommercial 1.0.0. That means:
+MIT License. Permissive and company-friendly:
 
-- You can use it for personal projects, learning, and non‑commercial work.
-- Companies can look and even use it internally — but not sell it or offer it as a paid service.
-- If you want to do anything commercial with it, please ask first via Discussions.
+- Commercial and noncommercial use allowed.
+- You can modify, distribute, and sublicense, including as part of paid products/services.
+- Requirement: keep the copyright and permission notice in copies/substantial portions.
+- Comes without warranty (see LICENSE for full text).
 
 Full text: see [LICENSE](./LICENSE)
 
