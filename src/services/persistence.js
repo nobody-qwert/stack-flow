@@ -306,7 +306,7 @@ export function uploadDiagram() {
 }
 
 // LocalStorage persistence
-const STORAGE_KEY = 'dataFlowDiagram';
+const STORAGE_KEY = (typeof window !== 'undefined' && window.__STANDALONE_STORAGE_KEY__) || 'dataFlowDiagram';
 const AUTOSAVE_INTERVAL = 30000; // 30 seconds
 
 let autosaveEnabled = true;

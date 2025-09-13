@@ -50,6 +50,16 @@ function decodeBase64(b64) {
   return decodeURIComponent(escape(atob(b64)));
 }
 
+function hashString32(str) {
+  // Simple FNV-1a 32-bit hash, returns base36 string
+  let h = 0x811c9dc5 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
 async function fetchText(url) {
   const res = await fetch(url, { credentials: 'omit', cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
@@ -244,7 +254,7 @@ function sanitizeTitleForHtml(title) {
 /**
  * Build the final standalone HTML
  */
-function buildStandaloneHtml({ title, cssText, initialJson, importMap, html2canvasCode, embeddedRawModules }) {
+function buildStandaloneHtml({ title, storageKey, cssText, initialJson, importMap, html2canvasCode, embeddedRawModules }) {
   const safeTitle = sanitizeTitleForHtml(title || 'Untitled diagram');
   const cssSafe = cssText || '';
   const initialJsonSafe = escapeForScriptTag(initialJson || '{}');
@@ -365,13 +375,26 @@ ${html2canvasCode || ''}
     <script type="module">
       (function() {
         try {
-          const key = 'dataFlowDiagram';
-          if (!localStorage.getItem(key)) {
-            const el = document.getElementById('initial-diagram');
-            if (el && el.textContent) {
-              localStorage.setItem(key, el.textContent);
-              localStorage.setItem(key + '_timestamp', Date.now().toString());
+          const storageKey = ${JSON.stringify(storageKey)};
+          // Make persistence use a unique key for this standalone file
+          window.__STANDALONE_STORAGE_KEY__ = storageKey;
+          const embeddedEl = document.getElementById('initial-diagram');
+          const embeddedText = embeddedEl && embeddedEl.textContent;
+          const countNodes = (txt) => {
+            try {
+              const obj = JSON.parse(txt || '');
+              if (Array.isArray(obj.n)) return obj.n.length | 0;
+              if (Array.isArray(obj.nodes)) return obj.nodes.length | 0;
+              return 0;
+            } catch (_) {
+              return 0;
             }
+          };
+          const current = localStorage.getItem(storageKey);
+          const needSeed = !current || countNodes(current) === 0;
+          if (needSeed && embeddedText) {
+            localStorage.setItem(storageKey, embeddedText);
+            localStorage.setItem(storageKey + '_timestamp', Date.now().toString());
           }
         } catch (e) {
           console.warn('Failed to seed localStorage from embedded diagram:', e);
@@ -421,8 +444,10 @@ export async function exportStandaloneHtml(filename = 'diagram.html') {
 
   // 6) Build final HTML
   const title = store.getState()?.diagram?.title || 'diagram';
+  const storageKey = 'dataFlowDiagram:' + hashString32(initialJson);
   const html = buildStandaloneHtml({
     title,
+    storageKey,
     cssText,
     initialJson,
     importMap,
