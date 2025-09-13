@@ -110,7 +110,9 @@ input:focus, textarea:focus, select:focus {
 .diagram-title-container {
   flex: 1;
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 8px; /* space between title and status pill */
   margin: 0 16px;
 }
 
@@ -136,6 +138,26 @@ input:focus, textarea:focus, select:focus {
 
 .diagram-title::placeholder {
   color: rgba(255, 255, 255, 0.6);
+}
+
+/* Save-status pill next to the title */
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid #555;
+}
+
+.topbar .save-status.dirty {
+  color: #ffd866;
+  background: rgba(224, 160, 0, 0.18);
+  border-color: #e0a000;
 }
 
 .actions {

@@ -45,6 +45,10 @@ class DataFlowApp {
     
     // Setup global keyboard handlers
     this.setupGlobalKeyboardHandlers();
+
+    // Setup save-status indicator and dirty tracking
+    this.setupSaveStatus();
+    this.setupDirtyTracking();
     
     // Subscribe to store changes
     store.subscribe((state) => {
@@ -222,6 +226,67 @@ class DataFlowApp {
       const collapsed = !inspector.classList.contains('collapsed');
       applyInspectorCollapsed(collapsed);
     });
+  }
+
+  // Save-status UI
+  setupSaveStatus() {
+    const container = document.querySelector('.diagram-title-container');
+    if (!container) return;
+    let el = document.getElementById('saveStatus');
+    if (!el) {
+      el = document.createElement('span');
+      el.id = 'saveStatus';
+      el.className = 'save-status';
+      el.setAttribute('role', 'status');
+      el.title = 'Your work is kept in this browser (localStorage). Use Export to save a file you can share.';
+      const titleInput = container.querySelector('#diagramTitle');
+      if (titleInput && titleInput.nextSibling) {
+        container.insertBefore(el, titleInput.nextSibling);
+      } else if (titleInput) {
+        container.appendChild(el);
+      } else {
+        container.appendChild(el);
+      }
+    }
+    this.saveStatusEl = el;
+    this.setDirty(false);
+  }
+
+  setDirty(d) {
+    this.dirty = !!d;
+    const el = this.saveStatusEl;
+    if (!el) return;
+    if (this.dirty) {
+      el.textContent = 'Edited — stored locally; Export to save/share';
+      el.classList.add('dirty');
+    } else {
+      el.textContent = 'Stored locally — Export to save/share';
+      el.classList.remove('dirty');
+    }
+  }
+
+  setupDirtyTracking() {
+    const markDirty = () => this.setDirty(true);
+    const markClean = () => this.setDirty(false);
+    const on = (e, cb) => eventBus.on(e, cb);
+    const E = EVENTS;
+
+    // Content-modifying events
+    on(E.NODE_ADD, markDirty);
+    on(E.NODE_UPDATE, markDirty);
+    on(E.NODE_DELETE, markDirty);
+    on(E.VARIABLE_ADD, markDirty);
+    on(E.VARIABLE_UPDATE, markDirty);
+    on(E.VARIABLE_DELETE, markDirty);
+    on(E.VARIABLE_REORDER, markDirty);
+    on(E.EDGE_ADD, markDirty);
+    on(E.EDGE_UPDATE, markDirty);
+    on(E.EDGE_DELETE, markDirty);
+
+    // Clean states (new import/load/export)
+    on(E.DIAGRAM_IMPORT, markClean);
+    on(E.DIAGRAM_LOAD, markClean);
+    on(E.DIAGRAM_EXPORT, markClean);
   }
 
   createNode() {
