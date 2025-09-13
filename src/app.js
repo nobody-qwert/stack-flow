@@ -4,7 +4,7 @@
 
 import { store } from './core/store.js';
 import { eventBus, EVENTS } from './core/eventBus.js';
-import { commandStack, setupKeyboardShortcuts } from './core/commandStack.js';
+import { commandStack, setupKeyboardShortcuts, createAddNodeCommand } from './core/commandStack.js';
 import { createNode, createVariable, createDiagram } from './core/types.js';
 import { generateNodeId, generateVariableId, generateEdgeId } from './core/id.js';
 import { downloadDiagram, uploadDiagram, loadDiagramFromStorage, getSavedDiagramInfo, clearSavedDiagram } from './services/persistence.js';
@@ -87,6 +87,34 @@ class DataFlowApp {
             store.deleteEdge(edgeId);
           }
         }
+      }
+    });
+
+    // Copy/Paste node handlers
+    document.addEventListener('keydown', async (e) => {
+      const isModifier = e.ctrlKey || e.metaKey;
+      const key = e.key && e.key.toLowerCase();
+      const active = document.activeElement;
+      const inEditable =
+        active &&
+        ((active.tagName === 'INPUT') ||
+         (active.tagName === 'TEXTAREA') ||
+         active.isContentEditable);
+
+      if (!isModifier) return;
+
+      // Copy selected node
+      if (key === 'c') {
+        if (inEditable) return; // allow normal copy in fields
+        const ok = await this.copySelectedNodeToClipboard();
+        if (ok) e.preventDefault();
+      }
+
+      // Paste node
+      if (key === 'v') {
+        if (inEditable) return; // allow normal paste in fields
+        const ok = await this.pasteNodeFromClipboard();
+        if (ok) e.preventDefault();
       }
     });
   }
@@ -226,6 +254,110 @@ class DataFlowApp {
       const collapsed = !inspector.classList.contains('collapsed');
       applyInspectorCollapsed(collapsed);
     });
+  }
+
+  // Copy selected node to clipboard (and localStorage fallback)
+  async copySelectedNodeToClipboard() {
+    try {
+      const state = store.getState();
+      if (state.selection.type !== 'node' || state.selection.ids.length !== 1) {
+        return false;
+      }
+      const nodeId = state.selection.ids[0];
+      const node = store.getNodeById(nodeId);
+      if (!node) return false;
+
+      // Serialize a node fragment
+      const payload = {
+        __stackflow: 'node-fragment',
+        version: 1,
+        node: JSON.parse(JSON.stringify(node))
+      };
+      const text = JSON.stringify(payload);
+
+      let wroteClipboard = false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          wroteClipboard = true;
+        }
+      } catch (err) {
+        // Clipboard write may be blocked in file:// or without user gesture
+      }
+
+      // Always store fallback so cross-tab paste works even without clipboard
+      try {
+        localStorage.setItem('stackflowClipboard', text);
+      } catch (_) {}
+
+      return wroteClipboard || true;
+    } catch (err) {
+      console.warn('Copy failed:', err);
+      return false;
+    }
+  }
+
+  // Paste node from clipboard (or localStorage fallback)
+  async pasteNodeFromClipboard() {
+    let text = null;
+    try {
+      if (navigator.clipboard?.readText) {
+        text = await navigator.clipboard.readText();
+      }
+    } catch (err) {
+      // Clipboard read may be blocked; fallback below
+    }
+    if (!text) {
+      try {
+        text = localStorage.getItem('stackflowClipboard');
+      } catch (_) {}
+    }
+    if (!text) return false;
+
+    let payload = null;
+    try {
+      payload = JSON.parse(text);
+    } catch (_) {
+      return false;
+    }
+    if (!(payload && payload.__stackflow === 'node-fragment' && payload.node)) {
+      return false;
+    }
+
+    const src = payload.node;
+    if (!src || !src.position) return false;
+
+    // Deep clone and regenerate IDs
+    const newNode = JSON.parse(JSON.stringify(src));
+    newNode.id = generateNodeId();
+    // Offset placement to avoid overlap
+    newNode.position = {
+      x: Math.max(0, (src.position?.x || 0) + 40),
+      y: Math.max(0, (src.position?.y || 0) + 40)
+    };
+    if (Array.isArray(newNode.variables)) {
+      newNode.variables = newNode.variables.map(v => ({
+        ...v,
+        id: generateVariableId()
+      }));
+    } else {
+      newNode.variables = [];
+    }
+
+    // Ensure optional fields are preserved sensibly
+    if (newNode.showVariableTypes === undefined) {
+      newNode.showVariableTypes = src.showVariableTypes ?? null;
+    }
+
+    try {
+      // Add as undoable command and select it
+      commandStack.execute(createAddNodeCommand(store, newNode));
+      store.setSelection('node', newNode.id);
+      return true;
+    } catch (err) {
+      console.error('Paste failed:', err);
+      return false;
+    }
   }
 
   // Save-status UI
