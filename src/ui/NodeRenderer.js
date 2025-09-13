@@ -295,6 +295,9 @@ export class NodeRenderer {
     const snapToGrid = (value) => {
       return Math.round(value / GRID_SIZE) * GRID_SIZE;
     };
+
+    // Resolve the current node element in case a re-render occurred during drag
+    const getNodeEl = () => document.querySelector(`.node[data-node-id="${node.id}"]`) || element;
     
     const handleMouseDown = (e) => {
       isDragging = true;
@@ -322,8 +325,9 @@ export class NodeRenderer {
       const newY = startNodeY + deltaY;
       
       // Update visual position immediately (no snapping during drag)
-      element.style.left = `${newX}px`;
-      element.style.top = `${newY}px`;
+      const el = getNodeEl();
+      el.style.left = `${newX}px`;
+      el.style.top = `${newY}px`;
     };
     
     const handleMouseUp = () => {
@@ -332,12 +336,13 @@ export class NodeRenderer {
       isDragging = false;
       this.isDraggingNode = false;
       this.canvasManager.setDragState(false);
-      element.style.cursor = '';
-      element.style.zIndex = ''; // Reset z-index
+      const el = getNodeEl();
+      el.style.cursor = '';
+      el.style.zIndex = ''; // Reset z-index
       
       // Get the final position from the element's style
-      let newX = parseInt(element.style.left);
-      let newY = parseInt(element.style.top);
+      let newX = parseInt(el.style.left);
+      let newY = parseInt(el.style.top);
       
       // Snap to grid
       newX = snapToGrid(newX);
@@ -348,8 +353,8 @@ export class NodeRenderer {
       newY = Math.max(0, newY);
       
       // Update the element position to the snapped position
-      element.style.left = `${newX}px`;
-      element.style.top = `${newY}px`;
+      el.style.left = `${newX}px`;
+      el.style.top = `${newY}px`;
       
       // Update store with snapped position
       store.updateNode(node.id, {
@@ -370,6 +375,10 @@ export class NodeRenderer {
       // Add listeners only when dragging starts
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      // Defer selection to next frame so drag listeners are attached; avoids breaking drag via immediate re-render
+      requestAnimationFrame(() => {
+        store.setSelection('node', node.id);
+      });
     });
   }
 }
